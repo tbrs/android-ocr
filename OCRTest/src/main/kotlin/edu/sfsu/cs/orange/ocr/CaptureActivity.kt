@@ -48,18 +48,16 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.SurfaceHolder
-import android.view.SurfaceView
 import android.view.View
 import android.view.Window
 import android.view.WindowManager
-import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
 import com.googlecode.tesseract.android.TessBaseAPI
 import edu.sfsu.cs.orange.ocr.camera.CameraManager
 import edu.sfsu.cs.orange.ocr.camera.ShutterButton
 import edu.sfsu.cs.orange.ocr.language.LanguageCodeHelper
 import edu.sfsu.cs.orange.ocr.language.TranslateAsyncTask
+import kotlinx.android.synthetic.main.capture.*
 import java.io.File
 import java.io.IOException
 
@@ -74,16 +72,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     internal var cameraManager: CameraManager? = null
         private set
     private var handler: CaptureActivityHandler? = null
-    private var viewfinderView: ViewfinderView? = null
-    private var surfaceView: SurfaceView? = null
     private var surfaceHolder: SurfaceHolder? = null
-    private var statusViewBottom: TextView? = null
-    private var statusViewTop: TextView? = null
-    private var ocrResultView: TextView? = null
-    private var translationView: TextView? = null
-    private var cameraButtonView: View? = null
-    private var resultView: View? = null
-    private var progressView: View? = null
     private var lastResult: OcrResult? = null
     private var lastBitmap: Bitmap? = null
     private var hasSurface: Boolean = false
@@ -99,7 +88,6 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     private var ocrEngineMode = TessBaseAPI.OEM_TESSERACT_ONLY
     private var characterBlacklist: String? = null
     private var characterWhitelist: String? = null
-    private var shutterButton: ShutterButton? = null
     private var isTranslationActive: Boolean = false // Whether we want to show translations
     private var isContinuousModeActive: Boolean = false // Whether we are doing OCR in continuous mode
     private var prefs: SharedPreferences? = null
@@ -192,14 +180,9 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS)
         setContentView(R.layout.capture)
-        viewfinderView = findViewById(R.id.viewfinder_view) as ViewfinderView
-        cameraButtonView = findViewById(R.id.camera_button_view)
-        resultView = findViewById(R.id.result_view)
 
-        statusViewBottom = findViewById(R.id.status_view_bottom) as TextView
-        registerForContextMenu(statusViewBottom)
-        statusViewTop = findViewById(R.id.status_view_top) as TextView
-        registerForContextMenu(statusViewTop)
+        registerForContextMenu(status_view_bottom)
+        registerForContextMenu(status_view_top)
 
         handler = null
         lastResult = null
@@ -207,25 +190,18 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         beepManager = BeepManager(this)
 
         // Camera shutter button
-        if (DISPLAY_SHUTTER_BUTTON) {
-            shutterButton = findViewById(R.id.shutter_button) as ShutterButton
-            shutterButton!!.setOnShutterButtonListener(this)
-        }
+        if (DISPLAY_SHUTTER_BUTTON) shutter_button.setOnShutterButtonListener(this)
 
-        ocrResultView = findViewById(R.id.ocr_result_text_view) as TextView
-        registerForContextMenu(ocrResultView)
-        translationView = findViewById(R.id.translation_text_view) as TextView
-        registerForContextMenu(translationView)
-
-        progressView = findViewById(R.id.indeterminate_progress_indicator_view) as View
+        registerForContextMenu(ocr_result_text_view)
+        registerForContextMenu(translation_text_view)
 
         with(CameraManager(application)) {
             cameraManager = this
-            viewfinderView!!.setCameraManager(this)
+            viewfinder_view.setCameraManager(this)
         }
 
         // Set listener to change the size of the viewfinder rectangle.
-        viewfinderView!!.setOnTouchListener(object : View.OnTouchListener {
+        viewfinder_view.setOnTouchListener(object : View.OnTouchListener {
             internal var lastX = -1
             internal var lastY = -1
 
@@ -250,35 +226,35 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
                                 if ((currentX >= rect!!.left - BIG_BUFFER && currentX <= rect.left + BIG_BUFFER || lastX >= rect.left - BIG_BUFFER && lastX <= rect.left + BIG_BUFFER) && (currentY <= rect.top + BIG_BUFFER && currentY >= rect.top - BIG_BUFFER || lastY <= rect.top + BIG_BUFFER && lastY >= rect.top - BIG_BUFFER)) {
                                     // Top left corner: adjust both top and left sides
                                     cameraManager!!.adjustFramingRect(2 * (lastX - currentX), 2 * (lastY - currentY))
-                                    viewfinderView!!.removeResultText()
+                                    viewfinder_view.removeResultText()
                                 } else if ((currentX >= rect.right - BIG_BUFFER && currentX <= rect.right + BIG_BUFFER || lastX >= rect.right - BIG_BUFFER && lastX <= rect.right + BIG_BUFFER) && (currentY <= rect.top + BIG_BUFFER && currentY >= rect.top - BIG_BUFFER || lastY <= rect.top + BIG_BUFFER && lastY >= rect.top - BIG_BUFFER)) {
                                     // Top right corner: adjust both top and right sides
                                     cameraManager!!.adjustFramingRect(2 * (currentX - lastX), 2 * (lastY - currentY))
-                                    viewfinderView!!.removeResultText()
+                                    viewfinder_view.removeResultText()
                                 } else if ((currentX >= rect.left - BIG_BUFFER && currentX <= rect.left + BIG_BUFFER || lastX >= rect.left - BIG_BUFFER && lastX <= rect.left + BIG_BUFFER) && (currentY <= rect.bottom + BIG_BUFFER && currentY >= rect.bottom - BIG_BUFFER || lastY <= rect.bottom + BIG_BUFFER && lastY >= rect.bottom - BIG_BUFFER)) {
                                     // Bottom left corner: adjust both bottom and left sides
                                     cameraManager!!.adjustFramingRect(2 * (lastX - currentX), 2 * (currentY - lastY))
-                                    viewfinderView!!.removeResultText()
+                                    viewfinder_view.removeResultText()
                                 } else if ((currentX >= rect.right - BIG_BUFFER && currentX <= rect.right + BIG_BUFFER || lastX >= rect.right - BIG_BUFFER && lastX <= rect.right + BIG_BUFFER) && (currentY <= rect.bottom + BIG_BUFFER && currentY >= rect.bottom - BIG_BUFFER || lastY <= rect.bottom + BIG_BUFFER && lastY >= rect.bottom - BIG_BUFFER)) {
                                     // Bottom right corner: adjust both bottom and right sides
                                     cameraManager!!.adjustFramingRect(2 * (currentX - lastX), 2 * (currentY - lastY))
-                                    viewfinderView!!.removeResultText()
+                                    viewfinder_view.removeResultText()
                                 } else if ((currentX >= rect.left - BUFFER && currentX <= rect.left + BUFFER || lastX >= rect.left - BUFFER && lastX <= rect.left + BUFFER) && (currentY <= rect.bottom && currentY >= rect.top || lastY <= rect.bottom && lastY >= rect.top)) {
                                     // Adjusting left side: event falls within BUFFER pixels of left side, and between top and bottom side limits
                                     cameraManager!!.adjustFramingRect(2 * (lastX - currentX), 0)
-                                    viewfinderView!!.removeResultText()
+                                    viewfinder_view.removeResultText()
                                 } else if ((currentX >= rect.right - BUFFER && currentX <= rect.right + BUFFER || lastX >= rect.right - BUFFER && lastX <= rect.right + BUFFER) && (currentY <= rect.bottom && currentY >= rect.top || lastY <= rect.bottom && lastY >= rect.top)) {
                                     // Adjusting right side: event falls within BUFFER pixels of right side, and between top and bottom side limits
                                     cameraManager!!.adjustFramingRect(2 * (currentX - lastX), 0)
-                                    viewfinderView!!.removeResultText()
+                                    viewfinder_view.removeResultText()
                                 } else if ((currentY <= rect.top + BUFFER && currentY >= rect.top - BUFFER || lastY <= rect.top + BUFFER && lastY >= rect.top - BUFFER) && (currentX <= rect.right && currentX >= rect.left || lastX <= rect.right && lastX >= rect.left)) {
                                     // Adjusting top side: event falls within BUFFER pixels of top side, and between left and right side limits
                                     cameraManager!!.adjustFramingRect(0, 2 * (lastY - currentY))
-                                    viewfinderView!!.removeResultText()
+                                    viewfinder_view.removeResultText()
                                 } else if ((currentY <= rect.bottom + BUFFER && currentY >= rect.bottom - BUFFER || lastY <= rect.bottom + BUFFER && lastY >= rect.bottom - BUFFER) && (currentX <= rect.right && currentX >= rect.left || lastX <= rect.right && lastX >= rect.left)) {
                                     // Adjusting bottom side: event falls within BUFFER pixels of bottom side, and between left and right side limits
                                     cameraManager!!.adjustFramingRect(0, 2 * (currentY - lastY))
-                                    viewfinderView!!.removeResultText()
+                                    viewfinder_view.removeResultText()
                                 }
                             }
                         } catch (e: NullPointerException) {
@@ -313,8 +289,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         retrievePreferences()
 
         // Set up the camera preview surface.
-        surfaceView = findViewById(R.id.preview_view) as SurfaceView
-        surfaceHolder = surfaceView!!.holder
+        surfaceHolder = preview_view.holder
         if (!hasSurface) {
             surfaceHolder!!.addCallback(this)
             surfaceHolder!!.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
@@ -389,9 +364,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         setStatusViewForContinuous()
         DecodeHandler.resetDecodeState()
         handler!!.resetState()
-        if (shutterButton != null && DISPLAY_SHUTTER_BUTTON) {
-            shutterButton!!.visibility = View.VISIBLE
-        }
+        if (DISPLAY_SHUTTER_BUTTON) shutter_button.visibility = View.VISIBLE
     }
 
     override fun surfaceCreated(holder: SurfaceHolder?) {
@@ -441,11 +414,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         // Stop using the camera, to avoid conflicting with other camera-based apps
         cameraManager!!.closeDriver()
 
-        if (!hasSurface) {
-            val surfaceView = findViewById(R.id.preview_view) as SurfaceView
-            val surfaceHolder = surfaceView.holder
-            surfaceHolder.removeCallback(this)
-        }
+        if (!hasSurface) preview_view.holder.removeCallback(this)
         super.onPause()
     }
 
@@ -640,54 +609,49 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         }
 
         // Turn off capture-related UI elements
-        shutterButton!!.visibility = View.GONE
-        statusViewBottom!!.visibility = View.GONE
-        statusViewTop!!.visibility = View.GONE
-        cameraButtonView!!.visibility = View.GONE
-        viewfinderView!!.visibility = View.GONE
-        resultView!!.visibility = View.VISIBLE
+        shutter_button.visibility = View.GONE
+        status_view_bottom.visibility = View.GONE
+        status_view_top.visibility = View.GONE
+        camera_button_view.visibility = View.GONE
+        viewfinder_view.visibility = View.GONE
+        result_view.visibility = View.VISIBLE
 
-        val bitmapImageView = findViewById(R.id.image_view) as ImageView
         lastBitmap = ocrResult.getBitmap()
         if (lastBitmap == null) {
-            bitmapImageView.setImageBitmap(BitmapFactory.decodeResource(resources,
-                    R.drawable.ic_launcher))
+            image_view.setImageBitmap(BitmapFactory.decodeResource(resources, R.drawable.ic_launcher))
         } else {
-            bitmapImageView.setImageBitmap(lastBitmap)
+            image_view.setImageBitmap(lastBitmap)
         }
 
         // Display the recognized text
-        val sourceLanguageTextView = findViewById(R.id.source_language_text_view) as TextView
-        sourceLanguageTextView.text = sourceLanguageReadable
-        val ocrResultTextView = findViewById(R.id.ocr_result_text_view) as TextView
-        ocrResultTextView.text = ocrResultText
+        source_language_text_view.text = sourceLanguageReadable
+        ocr_result_text_view.text = ocrResultText
         // Crudely scale betweeen 22 and 32 -- bigger font for shorter text
         val scaledSize = Math.max(22, 32 - ocrResultText.length / 4)
-        ocrResultTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize.toFloat())
+        ocr_result_text_view.setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize.toFloat())
 
-        val translationLanguageLabelTextView = findViewById(R.id.translation_language_label_text_view) as TextView
-        val translationLanguageTextView = findViewById(R.id.translation_language_text_view) as TextView
-        val translationTextView = findViewById(R.id.translation_text_view) as TextView
         if (isTranslationActive) {
             // Handle translation text fields
-            translationLanguageLabelTextView.visibility = View.VISIBLE
-            translationLanguageTextView.text = targetLanguageReadable
-            translationLanguageTextView.setTypeface(Typeface.defaultFromStyle(Typeface.NORMAL), Typeface.NORMAL)
-            translationLanguageTextView.visibility = View.VISIBLE
+            translation_language_label_text_view.visibility = View.VISIBLE
+            with(translation_language_text_view) {
+                text = targetLanguageReadable
+                setTypeface(Typeface.defaultFromStyle(Typeface.NORMAL), Typeface.NORMAL)
+                visibility = View.VISIBLE
+            }
 
             // Activate/re-activate the indeterminate progress indicator
-            translationTextView.visibility = View.GONE
-            progressView!!.visibility = View.VISIBLE
+            translation_text_view.visibility = View.GONE
+            indeterminate_progress_indicator_view.visibility = View.VISIBLE
             setProgressBarVisibility(true)
 
             // Get the translation asynchronously
             TranslateAsyncTask(this, sourceLanguageCodeTranslation, targetLanguageCodeTranslation,
                     ocrResultText).execute()
         } else {
-            translationLanguageLabelTextView.visibility = View.GONE
-            translationLanguageTextView.visibility = View.GONE
-            translationTextView.visibility = View.GONE
-            progressView!!.visibility = View.GONE
+            translation_language_label_text_view.visibility = View.GONE
+            translation_language_text_view.visibility = View.GONE
+            translation_text_view.visibility = View.GONE
+            indeterminate_progress_indicator_view.visibility = View.GONE
             setProgressBarVisibility(false)
         }
         return true
@@ -704,7 +668,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         // Send an OcrResultText object to the ViewfinderView for text rendering
         // TODO(tbrs): nullability stubbed with .orEmpty. Do something about it.
         val ocrResultText = ocrResult.text.orEmpty()
-        viewfinderView!!.addResultText(OcrResultText(ocrResultText.orEmpty(),
+        viewfinder_view.addResultText(OcrResultText(ocrResultText.orEmpty(),
                 ocrResult.wordConfidences!!,
                 ocrResult.meanConfidence,
                 ocrResult.bitmapDimensions,
@@ -718,20 +682,21 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
         if (CONTINUOUS_DISPLAY_RECOGNIZED_TEXT) {
             // Display the recognized text on the screen
-            statusViewTop!!.text = ocrResultText
-            val scaledSize = Math.max(22, 32 - ocrResultText.length / 4)
-            statusViewTop!!.setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize.toFloat())
-            statusViewTop!!.setTextColor(Color.BLACK)
-            statusViewTop!!.setBackgroundResource(R.color.status_top_text_background)
-
-            statusViewTop!!.background.alpha = meanConfidence * (255 / 100)
+            with(status_view_top) {
+                text = ocrResultText
+                val scaledSize = Math.max(22, 32 - ocrResultText.length / 4)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize.toFloat())
+                setTextColor(Color.BLACK)
+                setBackgroundResource(R.color.status_top_text_background)
+                background.alpha = meanConfidence * (255 / 100)
+            }
         }
 
         if (CONTINUOUS_DISPLAY_METADATA) {
             // Display recognition-related metadata at the bottom of the screen
             val recognitionTimeRequired = ocrResult.recognitionTimeRequired
-            statusViewBottom!!.textSize = 14f
-            statusViewBottom!!.text = "OCR: " + sourceLanguageReadable + " - Mean confidence: " +
+            status_view_bottom.textSize = 14f
+            status_view_bottom.text = "OCR: " + sourceLanguageReadable + " - Mean confidence: " +
                     meanConfidence.toString() + " - Time required: " + recognitionTimeRequired + " ms"
         }
     }
@@ -743,17 +708,17 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      */
     internal fun handleOcrContinuousDecode(obj: OcrResultFailure) {
         lastResult = null
-        viewfinderView!!.removeResultText()
+        viewfinder_view.removeResultText()
 
         // Reset the text in the recognized text box.
-        statusViewTop!!.text = ""
+        status_view_top.text = ""
 
         if (CONTINUOUS_DISPLAY_METADATA) {
             // Color text delimited by '-' as red.
-            statusViewBottom!!.textSize = 14f
+            status_view_bottom.textSize = 14f
             val cs = setSpanBetweenTokens("OCR: " + sourceLanguageReadable + " - OCR failed - Time required: "
                     + obj.timeRequired + " ms", "-", ForegroundColorSpan(-0x10000))
-            statusViewBottom!!.text = cs
+            status_view_bottom.text = cs
         }
     }
 
@@ -791,10 +756,10 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     override fun onCreateContextMenu(menu: ContextMenu, v: View,
                                      menuInfo: ContextMenuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo)
-        if (v == ocrResultView) {
+        if (v == ocr_result_text_view) {
             menu.add(Menu.NONE, OPTIONS_COPY_RECOGNIZED_TEXT_ID, Menu.NONE, "Copy recognized text")
             menu.add(Menu.NONE, OPTIONS_SHARE_RECOGNIZED_TEXT_ID, Menu.NONE, "Share recognized text")
-        } else if (v == translationView) {
+        } else if (v == translation_text_view) {
             menu.add(Menu.NONE, OPTIONS_COPY_TRANSLATED_TEXT_ID, Menu.NONE, "Copy translated text")
             menu.add(Menu.NONE, OPTIONS_SHARE_TRANSLATED_TEXT_ID, Menu.NONE, "Share translated text")
         }
@@ -805,7 +770,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         when (item.itemId) {
 
             OPTIONS_COPY_RECOGNIZED_TEXT_ID -> {
-                clipboardManager.text = ocrResultView!!.text
+                clipboardManager.text = ocr_result_text_view.text
                 if (clipboardManager.hasText()) {
                     val toast = Toast.makeText(this, "Text copied.", Toast.LENGTH_LONG)
                     toast.setGravity(Gravity.BOTTOM, 0, 0)
@@ -816,12 +781,12 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             OPTIONS_SHARE_RECOGNIZED_TEXT_ID -> {
                 val shareRecognizedTextIntent = Intent(android.content.Intent.ACTION_SEND)
                 shareRecognizedTextIntent.type = "text/plain"
-                shareRecognizedTextIntent.putExtra(android.content.Intent.EXTRA_TEXT, ocrResultView!!.text)
+                shareRecognizedTextIntent.putExtra(android.content.Intent.EXTRA_TEXT, ocr_result_text_view.text)
                 startActivity(Intent.createChooser(shareRecognizedTextIntent, "Share via"))
                 return true
             }
             OPTIONS_COPY_TRANSLATED_TEXT_ID -> {
-                clipboardManager.text = translationView!!.text
+                clipboardManager.text = translation_text_view.text
                 if (clipboardManager.hasText()) {
                     val toast = Toast.makeText(this, "Text copied.", Toast.LENGTH_LONG)
                     toast.setGravity(Gravity.BOTTOM, 0, 0)
@@ -832,7 +797,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             OPTIONS_SHARE_TRANSLATED_TEXT_ID -> {
                 val shareTranslatedTextIntent = Intent(android.content.Intent.ACTION_SEND)
                 shareTranslatedTextIntent.type = "text/plain"
-                shareTranslatedTextIntent.putExtra(android.content.Intent.EXTRA_TEXT, translationView!!.text)
+                shareTranslatedTextIntent.putExtra(android.content.Intent.EXTRA_TEXT, translation_text_view.text)
                 startActivity(Intent.createChooser(shareTranslatedTextIntent, "Share via"))
                 return true
             }
@@ -844,25 +809,23 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      * Resets view elements.
      */
     private fun resetStatusView() {
-        resultView!!.visibility = View.GONE
-        if (CONTINUOUS_DISPLAY_METADATA) {
-            statusViewBottom!!.text = ""
-            statusViewBottom!!.textSize = 14f
-            statusViewBottom!!.setTextColor(resources.getColor(R.color.status_text))
-            statusViewBottom!!.visibility = View.VISIBLE
+        result_view.visibility = View.GONE
+        if (CONTINUOUS_DISPLAY_METADATA) with(status_view_bottom) {
+            text = ""
+            textSize = 14f
+            setTextColor(resources.getColor(R.color.status_text))
+            visibility = View.VISIBLE
         }
         if (CONTINUOUS_DISPLAY_RECOGNIZED_TEXT) {
-            statusViewTop!!.text = ""
-            statusViewTop!!.textSize = 14f
-            statusViewTop!!.visibility = View.VISIBLE
+            status_view_top.text = ""
+            status_view_top.textSize = 14f
+            status_view_top.visibility = View.VISIBLE
         }
-        viewfinderView!!.visibility = View.VISIBLE
-        cameraButtonView!!.visibility = View.VISIBLE
-        if (DISPLAY_SHUTTER_BUTTON) {
-            shutterButton!!.visibility = View.VISIBLE
-        }
+        viewfinder_view.visibility = View.VISIBLE
+        camera_button_view.visibility = View.VISIBLE
+        if (DISPLAY_SHUTTER_BUTTON) shutter_button.visibility = View.VISIBLE
         lastResult = null
-        viewfinderView!!.removeResultText()
+        viewfinder_view.removeResultText()
     }
 
     /** Displays a pop-up message showing the name of the current OCR source language.  */
@@ -877,17 +840,17 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      * completed after starting realtime OCR.
      */
     internal fun setStatusViewForContinuous() {
-        viewfinderView!!.removeResultText()
+        viewfinder_view.removeResultText()
         if (CONTINUOUS_DISPLAY_METADATA) {
-            statusViewBottom!!.text = "OCR: $sourceLanguageReadable - waiting for OCR..."
+            status_view_bottom.text = "OCR: $sourceLanguageReadable - waiting for OCR..."
         }
     }
 
     internal fun setButtonVisibility(visible: Boolean) {
-        if (shutterButton != null && visible == true && DISPLAY_SHUTTER_BUTTON) {
-            shutterButton!!.visibility = View.VISIBLE
-        } else if (shutterButton != null) {
-            shutterButton!!.visibility = View.GONE
+        shutter_button.visibility = if (visible && DISPLAY_SHUTTER_BUTTON) {
+            View.VISIBLE
+        } else {
+            View.GONE
         }
     }
 
@@ -897,13 +860,11 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      * @param clickable True if the button should accept a click
      */
     internal fun setShutterButtonClickable(clickable: Boolean) {
-        shutterButton!!.isClickable = clickable
+        shutter_button.isClickable = clickable
     }
 
     /** Request the viewfinder to be invalidated.  */
-    internal fun drawViewfinder() {
-        viewfinderView!!.drawViewfinder()
-    }
+    internal fun drawViewfinder() = viewfinder_view.drawViewfinder()
 
     override fun onShutterButtonClick(b: ShutterButton) {
         if (isContinuousModeActive) {
