@@ -6,6 +6,10 @@ Runs the Tesseract OCR engine using [tess-two](https://github.com/rmtheis/tess-t
 
 Most of the code making up the core structure of this project has been adapted from the ZXing Barcode Scanner. Along with Tesseract-OCR and Tesseract Tools for Android (tesseract-android-tools), several open source projects have been used in this project, including leptonica, google-api-translate-java, microsoft-translator-java-api, and jtar.
 
+## About this fork
+
+It's a Kotlin version of the original app.
+
 ## Video
 
 [![Video](http://img.youtube.com/vi/FOSgiPjGwx4/0.jpg)](http://www.youtube.com/watch?v=FOSgiPjGwx4)
