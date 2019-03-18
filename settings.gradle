@@ -1,1 +1,1 @@
-include ':OCRTest'
+include ':app'
