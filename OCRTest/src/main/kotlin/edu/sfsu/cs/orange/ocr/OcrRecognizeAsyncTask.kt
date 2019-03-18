@@ -46,7 +46,7 @@ internal class OcrRecognizeAsyncTask(
 
     override fun doInBackground(vararg arg0: Void): Boolean {
         val start = System.currentTimeMillis()
-        val bitmap = activity.getCameraManager().buildLuminanceSource(data, width, height).renderCroppedGreyscaleBitmap()
+        val bitmap = activity.cameraManager?.buildLuminanceSource(data, width, height)?.renderCroppedGreyscaleBitmap()
         val textResult: String?
 
         //      if (PERFORM_FISHER_THRESHOLDING) {
@@ -110,7 +110,7 @@ internal class OcrRecognizeAsyncTask(
         }
 
         timeRequired = System.currentTimeMillis() - start
-        ocrResult!!.bitmap = bitmap
+        ocrResult!!.setBitmap(bitmap!!)
         ocrResult!!.text = textResult
         ocrResult!!.recognitionTimeRequired = timeRequired
         return true
@@ -129,7 +129,7 @@ internal class OcrRecognizeAsyncTask(
                 val message = Message.obtain(handler, R.id.ocr_decode_failed, ocrResult)
                 message.sendToTarget()
             }
-            activity.getProgressDialog().dismiss()
+            activity.progressDialog?.dismiss()
         }
         baseApi?.clear()
     }

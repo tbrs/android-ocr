@@ -98,14 +98,14 @@ internal class DecodeHandler(private val activity: CaptureActivity) : Handler() 
             }
 
             timeRequired = System.currentTimeMillis() - start
-            ocrResult.bitmap = bitmap
+            ocrResult.setBitmap(bitmap!!)
             ocrResult.text = textResult
             ocrResult.recognitionTimeRequired = timeRequired
             return ocrResult
         }
 
     init {
-        baseApi = activity.getBaseApi()
+        baseApi = activity.baseApi!!
         beepManager = BeepManager(activity)
         beepManager.updatePrefs()
     }
@@ -152,7 +152,7 @@ internal class DecodeHandler(private val activity: CaptureActivity) : Handler() 
      * @param height Image height
      */
     private fun ocrContinuousDecode(data: ByteArray, width: Int, height: Int) {
-        val source = activity.getCameraManager().buildLuminanceSource(data, width, height)
+        val source = activity.cameraManager!!.buildLuminanceSource(data, width, height)
         if (source == null) {
             sendContinuousOcrFailMessage()
             return

@@ -91,7 +91,7 @@ class ViewfinderView// This constructor is used when the class is built from an 
 
             // Only draw text/bounding boxes on viewfinder if it hasn't been resized since the OCR was requested.
             val bitmapSize = resultText!!.bitmapDimensions
-            previewFrame = cameraManager!!.framingRectInPreview
+            previewFrame = cameraManager!!.getFramingRectInPreview()
             if (bitmapSize.x == previewFrame!!.width() && bitmapSize.y == previewFrame!!.height()) {
 
 

@@ -48,7 +48,7 @@ abstract class LuminanceSource protected constructor(
     /**
      * @return Whether this subclass supports cropping.
      */
-    val isCropSupported: Boolean
+    open val isCropSupported: Boolean
         get() = true
 
     /**

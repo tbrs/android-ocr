@@ -17,10 +17,8 @@
 
 package edu.sfsu.cs.orange.ocr.camera
 
-import android.graphics.Point
 import android.hardware.Camera
 import android.os.Handler
-import android.os.Message
 import android.util.Log
 
 /**
@@ -32,7 +30,7 @@ internal class PreviewCallback(private val configManager: CameraConfigurationMan
     private var previewHandler: Handler? = null
     private var previewMessage: Int = 0
 
-    fun setHandler(previewHandler: Handler, previewMessage: Int) {
+    fun setHandler(previewHandler: Handler?, previewMessage: Int) {
         this.previewHandler = previewHandler
         this.previewMessage = previewMessage
     }

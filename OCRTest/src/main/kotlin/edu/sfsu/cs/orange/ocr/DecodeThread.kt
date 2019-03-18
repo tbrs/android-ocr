@@ -17,7 +17,6 @@
 
 package edu.sfsu.cs.orange.ocr
 
-import edu.sfsu.cs.orange.ocr.CaptureActivity
 import android.os.Handler
 import android.os.Looper
 import java.util.concurrent.CountDownLatch
@@ -28,21 +27,15 @@ import java.util.concurrent.CountDownLatch
  * The code for this class was adapted from the ZXing project: http://code.google.com/p/zxing
  */
 internal class DecodeThread(private val activity: CaptureActivity) : Thread() {
-    private var handler: Handler? = null
-    private val handlerInitLatch: CountDownLatch
+    private lateinit var handler: Handler
+    private val handlerInitLatch: CountDownLatch = CountDownLatch(1)
 
-    init {
-        handlerInitLatch = CountDownLatch(1)
-    }
-
-    fun getHandler(): Handler? {
-        try {
-            handlerInitLatch.await()
-        } catch (ie: InterruptedException) {
-            // continue?
-        }
-
-        return handler
+    fun getHandler(): Handler = try {
+        handlerInitLatch.await()
+        handler
+    } catch (ie: InterruptedException) {
+        // continue?
+        handler
     }
 
     override fun run() {

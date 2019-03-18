@@ -353,8 +353,8 @@ internal class OcrInitAsyncTask
 
         var downloaded = 0
         val buffer = ByteArray(BUFFER)
-        var bufferLength = 0
-        while ((bufferLength = inputStream.read(buffer, 0, BUFFER)) > 0) {
+        var bufferLength = inputStream.read(buffer, 0, BUFFER)
+        while (bufferLength > 0) {
             fileOutputStream!!.write(buffer, 0, bufferLength)
             downloaded += bufferLength
             percentComplete = (downloaded / fileSize.toFloat() * 100).toInt()
@@ -364,6 +364,7 @@ internal class OcrInitAsyncTask
                         percentComplete.toString())
                 percentCompleteLast = percentComplete
             }
+            bufferLength = inputStream.read(buffer, 0, BUFFER)
         }
         fileOutputStream!!.close()
         urlConnection?.disconnect()
@@ -419,8 +420,8 @@ internal class OcrInitAsyncTask
 
         val BUFFER = 8192
         val data = ByteArray(BUFFER)
-        var len: Int
-        while ((len = gzipInputStream.read(data, 0, BUFFER)) > 0) {
+        var len: Int = gzipInputStream.read(data, 0, BUFFER)
+        while (len > 0) {
             bufferedOutputStream.write(data, 0, len)
             unzippedBytes += len
             percentComplete = (unzippedBytes / uncompressedFileSize.toFloat() * progressMax).toInt() + progressMin
@@ -430,6 +431,7 @@ internal class OcrInitAsyncTask
                         + "...", percentComplete.toString())
                 percentCompleteLast = percentComplete
             }
+            len = gzipInputStream.read(data, 0, BUFFER)
         }
         gzipInputStream.close()
         bufferedOutputStream.flush()
@@ -487,9 +489,8 @@ internal class OcrInitAsyncTask
         // Extract all the files
         val tarInputStream = TarInputStream(BufferedInputStream(
                 FileInputStream(tarFile)))
-        var entry: TarEntry
-        while ((entry = tarInputStream.nextEntry) != null) {
-            var len: Int
+        var entry: TarEntry = tarInputStream.nextEntry
+        while (entry != null) {
             val BUFFER = 8192
             val data = ByteArray(BUFFER)
             val pathName = entry.name
@@ -498,7 +499,8 @@ internal class OcrInitAsyncTask
             val bufferedOutputStream = BufferedOutputStream(outputStream)
 
             Log.d(TAG, "Writing " + fileName.substring(1, fileName.length) + "...")
-            while ((len = tarInputStream.read(data, 0, BUFFER)) != -1) {
+            var len: Int = tarInputStream.read(data, 0, BUFFER)
+            while (len != -1) {
                 bufferedOutputStream.write(data, 0, len)
                 unzippedBytes += len
                 percentComplete = (unzippedBytes / uncompressedSize.toFloat() * progressMax).toInt() + progressMin
@@ -507,9 +509,11 @@ internal class OcrInitAsyncTask
                             percentComplete.toString())
                     percentCompleteLast = percentComplete
                 }
+                len = tarInputStream.read(data, 0, BUFFER)
             }
             bufferedOutputStream.flush()
             bufferedOutputStream.close()
+            entry = tarInputStream.nextEntry
         }
         tarInputStream.close()
 
@@ -531,11 +535,10 @@ internal class OcrInitAsyncTask
         var size = 0
         val tis = TarInputStream(BufferedInputStream(
                 FileInputStream(tarFile)))
-        var entry: TarEntry
-        while ((entry = tis.nextEntry) != null) {
-            if (!entry.isDirectory) {
-                size += entry.size.toInt()
-            }
+        var entry: TarEntry = tis.nextEntry
+        while (entry != null) {
+            if (!entry.isDirectory) size += entry.size.toInt()
+            entry = tis.nextEntry
         }
         tis.close()
         return size
@@ -614,11 +617,11 @@ internal class OcrInitAsyncTask
                 var unzippedSize = 0
 
                 // Write the contents
-                var count = 0
-                var percentComplete: Int? = 0
-                var percentCompleteLast: Int? = 0
+                var percentComplete: Int = 0
+                var percentCompleteLast: Int = 0
                 val data = ByteArray(BUFFER)
-                while ((count = inputStream.read(data, 0, BUFFER)) != -1) {
+                var count = inputStream.read(data, 0, BUFFER)
+                while (count != -1) {
                     bufferedOutputStream.write(data, 0, count)
                     unzippedSize += count
                     percentComplete = (unzippedSize / zippedFileSize * 100).toInt()
@@ -627,6 +630,7 @@ internal class OcrInitAsyncTask
                                 percentComplete.toString(), "0")
                         percentCompleteLast = percentComplete
                     }
+                    count = inputStream.read(data, 0, BUFFER)
                 }
                 bufferedOutputStream.close()
             }
