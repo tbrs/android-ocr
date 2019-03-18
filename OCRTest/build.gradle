@@ -1,13 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "24.0.2"
+    compileSdkVersion 28
 
     defaultConfig {
         applicationId "edu.sfsu.cs.orange.ocr"
         minSdkVersion 9
-        targetSdkVersion 10
+        targetSdkVersion 28
     }
 
     buildTypes {
@@ -19,9 +18,9 @@ android {
 }
 
 dependencies {
-    compile 'com.rmtheis:tess-two:6.0.4'
-    compile files('libs/google-api-translate-java-0.98-mod2.jar')
-    compile files('libs/json_simple-1.1.jar')
-    compile files('libs/jtar-1.0.4.jar')
-    compile files('libs/microsoft-translator-java-api-0.6-mod.jar')
+    implementation 'com.rmtheis:tess-two:6.0.4'
+    implementation files('libs/google-api-translate-java-0.98-mod2.jar')
+    implementation files('libs/json_simple-1.1.jar')
+    implementation files('libs/jtar-1.0.4.jar')
+    implementation files('libs/microsoft-translator-java-api-0.6-mod.jar')
 }
