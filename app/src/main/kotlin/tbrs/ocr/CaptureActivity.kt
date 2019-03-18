@@ -1077,14 +1077,17 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      * @param title The title for the dialog box.
      * @param message The error message to be displayed.
      */
-    internal fun showErrorMessage(title: String, message: String) {
+    internal fun showErrorMessage(title: String, message: String) =
         AlertDialog.Builder(this)
                 .setTitle(title)
                 .setMessage(message)
-                .setOnCancelListener(FinishListener(this))
-                .setPositiveButton("Done", FinishListener(this))
+                .setOnCancelListener {
+                    finish()
+                }
+                .setPositiveButton(R.string.dialog_error_button_positive) { _, _ ->
+                    finish()
+                }
                 .show()
-    }
 
     companion object {
 
