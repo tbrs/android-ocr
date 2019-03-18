@@ -18,6 +18,7 @@
 
 package tbrs.ocr
 
+import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.ProgressDialog
@@ -52,6 +53,9 @@ import android.view.View
 import android.view.Window
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.annotation.StringRes
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.googlecode.tesseract.android.TessBaseAPI
 import kotlinx.android.synthetic.main.capture.*
 import tbrs.ocr.camera.CameraManager
@@ -346,7 +350,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         if (hasSurface) {
             // The activity was paused but not stopped, so the surface still exists. Therefore
             // surfaceCreated() won't be called, so init the camera here.
-            initCamera(surfaceHolder)
+            tryInitCamera()
         }
     }
 
@@ -384,26 +388,51 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
         // Only initialize the camera if the OCR engine is ready to go.
         if (!hasSurface && isEngineReady) {
-            Log.d(TAG, "surfaceCreated(): calling initCamera()...")
-            initCamera(holder)
+            Log.d(TAG, "surfaceCreated(): calling tryInitCamera()...")
+            tryInitCamera()
         }
         hasSurface = true
     }
 
     /** Initializes the camera and starts the handler to begin previewing.  */
-    private fun initCamera(surfaceHolder: SurfaceHolder?) {
-        Log.d(TAG, "initCamera()")
-        if (surfaceHolder == null) {
-            throw IllegalStateException("No SurfaceHolder provided")
+    private fun tryInitCamera() {
+        if (ContextCompat.checkSelfPermission(application, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            initCamera()
+            return
         }
-        try {
 
+        // Request camera permission.
+        AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_permissions_title)
+                .setMessage(R.string.dialog_permissions_message)
+                .setCancelable(false)
+                .setPositiveButton(R.string.dialog_permissions_button_positive) { dialog, _ ->
+                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST_CAMERA)
+                    dialog.dismiss()
+                }.setNegativeButton(R.string.dialog_permissions_button_negative) { dialog, _ ->
+                    exitOnCameraInaccessible()
+                    dialog.dismiss()
+                }.create().show()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) = super.onRequestPermissionsResult(requestCode, permissions, grantResults).also {
+        if (requestCode == PERMISSION_REQUEST_CAMERA && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            initCamera()
+        } else {
+            exitOnCameraInaccessible()
+        }
+    }
+
+    private fun initCamera() {
+        Log.d(TAG, "initCamera()")
+        if (surfaceHolder == null) throw IllegalStateException("No SurfaceHolder provided")
+
+        try {
             // Open and initialize the camera.
-            cameraManager!!.openDriver(surfaceHolder)
+            cameraManager!!.openDriver(surfaceHolder!!)
 
             // Creating the handler starts the preview, which can also throw a RuntimeException.
             handler = CaptureActivityHandler(this, cameraManager!!, isContinuousModeActive)
-
         } catch (ioe: IOException) {
             showErrorMessage("Error", "Could not initialize camera. Please try restarting device.")
         } catch (e: RuntimeException) {
@@ -411,8 +440,10 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             // java.?lang.?RuntimeException: Fail to connect to camera service.
             showErrorMessage("Error", "Could not initialize camera. Please try restarting device.")
         }
-
     }
+
+    private fun exitOnCameraInaccessible() = showErrorMessage(R.string.dialog_no_camera_permission_title,
+            R.string.dialog_no_camera_permission_message)
 
     override fun onPause() {
         if (handler != null) {
@@ -1034,6 +1065,9 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         progressDialog!!.show()
     }
 
+    private fun showErrorMessage(@StringRes title: Int, @StringRes message: Int) =
+            showErrorMessage(getString(title), getString(message))
+
     /**
      * Displays an error message dialog box to the user on the UI thread.
      *
@@ -1137,5 +1171,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         // True if this is the first time the app is being run.
         internal var firstLaunch: Boolean = false
             private set
+
+        private const val PERMISSION_REQUEST_CAMERA = 42
     }
 }
