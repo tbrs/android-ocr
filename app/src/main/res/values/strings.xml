@@ -17,4 +17,12 @@
  -->
 <resources>
     <string name="app_name">OCR Test</string>
+
+    <string name="dialog_permissions_title">Access to your phone</string>
+    <string name="dialog_permissions_message">This application can\'t capture text without access to camera. Do you allow using it?</string>
+    <string name="dialog_permissions_button_positive">Sure</string>
+    <string name="dialog_permissions_button_negative">Nope</string>
+
+    <string name="dialog_no_camera_permission_title">Access to your phone</string>
+    <string name="dialog_no_camera_permission_message">Application can\'t work without access to your camera. Closing.</string>
 </resources>
