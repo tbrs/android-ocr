@@ -77,45 +77,41 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     private var lastBitmap: Bitmap? = null
     private var hasSurface: Boolean = false
     private var beepManager: BeepManager? = null
+    // Interface for the Tesseract OCR engine.
     internal var baseApi: TessBaseAPI? = null
-        private set // Java interface for the Tesseract OCR engine
-    private var sourceLanguageCodeOcr: String = "" // ISO 639-3 language code
-    private var sourceLanguageReadable: String? = null // Language name, for example, "English"
-    private var sourceLanguageCodeTranslation: String = "" // ISO 639-1 language code
-    private var targetLanguageCodeTranslation: String = "" // ISO 639-1 language code
-    private var targetLanguageReadable: String? = null // Language name, for example, "English"
+        private set
+    // ISO 639-3 language code.
+    private var sourceLanguageCodeOcr: String = ""
+    // Language name, for example, "English".
+    private var sourceLanguageReadable: String? = null
+    // ISO 639-1 language code.
+    private var sourceLanguageCodeTranslation: String = ""
+    // ISO 639-1 language code.
+    private var targetLanguageCodeTranslation: String = ""
+    // Language name, for example, "English".
+    private var targetLanguageReadable: String? = null
     private var pageSegmentationMode = TessBaseAPI.PageSegMode.PSM_AUTO_OSD
     private var ocrEngineMode = TessBaseAPI.OEM_TESSERACT_ONLY
     private var characterBlacklist: String? = null
     private var characterWhitelist: String? = null
-    private var isTranslationActive: Boolean = false // Whether we want to show translations
-    private var isContinuousModeActive: Boolean = false // Whether we are doing OCR in continuous mode
+    // Whether we want to show translations.
+    private var isTranslationActive: Boolean = false
+    // Whether we are doing OCR in continuous mode.
+    private var isContinuousModeActive: Boolean = false
     private var prefs: SharedPreferences? = null
     private val listener: OnSharedPreferenceChangeListener? = null
-    private var dialog: ProgressDialog? = null // for initOcr - language download & unzip
+    // For initOcr - language download & unzip.
+    private var dialog: ProgressDialog? = null
+    // Also for initOcr - init OCR engine.
     internal var progressDialog: ProgressDialog? = null
-        private set // also for initOcr - init OCR engine
+        private set
     private var isEngineReady: Boolean = false
     private var isPaused: Boolean = false
 
     /** Finds the proper location on the SD card where we can save files.  */
-    private//Log.d(TAG, "getStorageDirectory(): API level is " + Integer.valueOf(android.os.Build.VERSION.SDK_INT));
-    // We can read and write the media
-    //    	if (Integer.valueOf(android.os.Build.VERSION.SDK_INT) > 7) {
-    // For Android 2.2 and above
-    // We get an error here if the SD card is visible, but full
-    //        } else {
-    //          // For Android 2.1 and below, explicitly give the path as, for example,
-    //          // "/mnt/sdcard/Android/data/edu.sfsu.cs.orange.ocr/files/"
-    //          return new File(Environment.getExternalStorageDirectory().toString() + File.separator +
-    //                  "Android" + File.separator + "data" + File.separator + getPackageName() +
-    //                  File.separator + "files" + File.separator);
-    //        }
-    // We can only read the media
-    // Something else is wrong. It may be one of many other states, but all we need
-    // to know is we can neither read nor write
-    val storageDirectory: File?
+    private val storageDirectory: File?
         get() {
+            // Log.d(TAG, "getStorageDirectory(): API level is " + Integer.valueOf(android.os.Build.VERSION.SDK_INT));
 
             var state: String? = null
             try {
@@ -126,18 +122,30 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             }
 
             if (Environment.MEDIA_MOUNTED == Environment.getExternalStorageState()) {
-
+                // We can read and write the media
+                //    	if (Integer.valueOf(android.os.Build.VERSION.SDK_INT) > 7) {
+                // For Android 2.2 and above.
                 try {
                     return getExternalFilesDir(Environment.MEDIA_MOUNTED)
                 } catch (e: NullPointerException) {
+                    // We get an error here if the SD card is visible, but full.
                     Log.e(TAG, "External storage is unavailable")
                     showErrorMessage("Error", "Required external storage (such as an SD card) is full or unavailable.")
                 }
-
+                //        } else {
+                //          // For Android 2.1 and below, explicitly give the path as, for example,
+                //          // "/mnt/sdcard/Android/data/edu.sfsu.cs.orange.ocr/files/"
+                //          return new File(Environment.getExternalStorageDirectory().toString() + File.separator +
+                //                  "Android" + File.separator + "data" + File.separator + getPackageName() +
+                //                  File.separator + "files" + File.separator);
+                //        }
             } else if (Environment.MEDIA_MOUNTED_READ_ONLY == state) {
+                // We can only read the media.
                 Log.e(TAG, "External storage is read-only")
                 showErrorMessage("Error", "Required external storage (such as an SD card) is unavailable for data storage.")
             } else {
+                // Something else is wrong. It may be one of many other states, but all we need
+                // to know is we can neither read nor write
                 Log.e(TAG, "External storage is unavailable")
                 showErrorMessage("Error", "Required external storage (such as an SD card) is unavailable or corrupted.")
             }
@@ -189,7 +197,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         hasSurface = false
         beepManager = BeepManager(this)
 
-        // Camera shutter button
+        // Camera shutter button.
         if (DISPLAY_SHUTTER_BUTTON) shutter_button.setOnShutterButtonListener(this)
 
         registerForContextMenu(ocr_result_text_view)
@@ -224,35 +232,35 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
                             if (lastX >= 0) {
                                 // Adjust the size of the viewfinder rectangle. Check if the touch event occurs in the corner areas first, because the regions overlap.
                                 if ((currentX >= rect!!.left - BIG_BUFFER && currentX <= rect.left + BIG_BUFFER || lastX >= rect.left - BIG_BUFFER && lastX <= rect.left + BIG_BUFFER) && (currentY <= rect.top + BIG_BUFFER && currentY >= rect.top - BIG_BUFFER || lastY <= rect.top + BIG_BUFFER && lastY >= rect.top - BIG_BUFFER)) {
-                                    // Top left corner: adjust both top and left sides
+                                    // Top left corner: adjust both top and left sides.
                                     cameraManager!!.adjustFramingRect(2 * (lastX - currentX), 2 * (lastY - currentY))
                                     viewfinder_view.removeResultText()
                                 } else if ((currentX >= rect.right - BIG_BUFFER && currentX <= rect.right + BIG_BUFFER || lastX >= rect.right - BIG_BUFFER && lastX <= rect.right + BIG_BUFFER) && (currentY <= rect.top + BIG_BUFFER && currentY >= rect.top - BIG_BUFFER || lastY <= rect.top + BIG_BUFFER && lastY >= rect.top - BIG_BUFFER)) {
-                                    // Top right corner: adjust both top and right sides
+                                    // Top right corner: adjust both top and right sides.
                                     cameraManager!!.adjustFramingRect(2 * (currentX - lastX), 2 * (lastY - currentY))
                                     viewfinder_view.removeResultText()
                                 } else if ((currentX >= rect.left - BIG_BUFFER && currentX <= rect.left + BIG_BUFFER || lastX >= rect.left - BIG_BUFFER && lastX <= rect.left + BIG_BUFFER) && (currentY <= rect.bottom + BIG_BUFFER && currentY >= rect.bottom - BIG_BUFFER || lastY <= rect.bottom + BIG_BUFFER && lastY >= rect.bottom - BIG_BUFFER)) {
-                                    // Bottom left corner: adjust both bottom and left sides
+                                    // Bottom left corner: adjust both bottom and left sides.
                                     cameraManager!!.adjustFramingRect(2 * (lastX - currentX), 2 * (currentY - lastY))
                                     viewfinder_view.removeResultText()
                                 } else if ((currentX >= rect.right - BIG_BUFFER && currentX <= rect.right + BIG_BUFFER || lastX >= rect.right - BIG_BUFFER && lastX <= rect.right + BIG_BUFFER) && (currentY <= rect.bottom + BIG_BUFFER && currentY >= rect.bottom - BIG_BUFFER || lastY <= rect.bottom + BIG_BUFFER && lastY >= rect.bottom - BIG_BUFFER)) {
-                                    // Bottom right corner: adjust both bottom and right sides
+                                    // Bottom right corner: adjust both bottom and right sides.
                                     cameraManager!!.adjustFramingRect(2 * (currentX - lastX), 2 * (currentY - lastY))
                                     viewfinder_view.removeResultText()
                                 } else if ((currentX >= rect.left - BUFFER && currentX <= rect.left + BUFFER || lastX >= rect.left - BUFFER && lastX <= rect.left + BUFFER) && (currentY <= rect.bottom && currentY >= rect.top || lastY <= rect.bottom && lastY >= rect.top)) {
-                                    // Adjusting left side: event falls within BUFFER pixels of left side, and between top and bottom side limits
+                                    // Adjusting left side: event falls within BUFFER pixels of left side, and between top and bottom side limits.
                                     cameraManager!!.adjustFramingRect(2 * (lastX - currentX), 0)
                                     viewfinder_view.removeResultText()
                                 } else if ((currentX >= rect.right - BUFFER && currentX <= rect.right + BUFFER || lastX >= rect.right - BUFFER && lastX <= rect.right + BUFFER) && (currentY <= rect.bottom && currentY >= rect.top || lastY <= rect.bottom && lastY >= rect.top)) {
-                                    // Adjusting right side: event falls within BUFFER pixels of right side, and between top and bottom side limits
+                                    // Adjusting right side: event falls within BUFFER pixels of right side, and between top and bottom side limits.
                                     cameraManager!!.adjustFramingRect(2 * (currentX - lastX), 0)
                                     viewfinder_view.removeResultText()
                                 } else if ((currentY <= rect.top + BUFFER && currentY >= rect.top - BUFFER || lastY <= rect.top + BUFFER && lastY >= rect.top - BUFFER) && (currentX <= rect.right && currentX >= rect.left || lastX <= rect.right && lastX >= rect.left)) {
-                                    // Adjusting top side: event falls within BUFFER pixels of top side, and between left and right side limits
+                                    // Adjusting top side: event falls within BUFFER pixels of top side, and between left and right side limits.
                                     cameraManager!!.adjustFramingRect(0, 2 * (lastY - currentY))
                                     viewfinder_view.removeResultText()
                                 } else if ((currentY <= rect.bottom + BUFFER && currentY >= rect.bottom - BUFFER || lastY <= rect.bottom + BUFFER && lastY >= rect.bottom - BUFFER) && (currentX <= rect.right && currentX >= rect.left || lastX <= rect.right && lastX >= rect.left)) {
-                                    // Adjusting bottom side: event falls within BUFFER pixels of bottom side, and between left and right side limits
+                                    // Adjusting bottom side: event falls within BUFFER pixels of bottom side, and between left and right side limits.
                                     cameraManager!!.adjustFramingRect(0, 2 * (currentY - lastY))
                                     viewfinder_view.removeResultText()
                                 }
@@ -295,9 +303,9 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             surfaceHolder!!.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
         }
 
-        // Comment out the following block to test non-OCR functions without an SD card
+        // Comment out the following block to test non-OCR functions without an SD card.
 
-        // Do OCR engine initialization, if necessary
+        // Do OCR engine initialization, if necessary.
         val doNewInit = baseApi == null || sourceLanguageCodeOcr != previousSourceLanguageCodeOcr ||
                 ocrEngineMode != previousOcrEngineMode
         if (doNewInit) {
@@ -390,7 +398,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         }
         try {
 
-            // Open and initialize the camera
+            // Open and initialize the camera.
             cameraManager!!.openDriver(surfaceHolder)
 
             // Creating the handler starts the preview, which can also throw a RuntimeException.
@@ -400,7 +408,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             showErrorMessage("Error", "Could not initialize camera. Please try restarting device.")
         } catch (e: RuntimeException) {
             // Barcode Scanner has seen crashes in the wild of this variety:
-            // java.?lang.?RuntimeException: Fail to connect to camera service
+            // java.?lang.?RuntimeException: Fail to connect to camera service.
             showErrorMessage("Error", "Could not initialize camera. Please try restarting device.")
         }
 
@@ -411,7 +419,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             handler!!.quitSynchronously()
         }
 
-        // Stop using the camera, to avoid conflicting with other camera-based apps
+        // Stop using the camera, to avoid conflicting with other camera-based apps.
         cameraManager!!.closeDriver()
 
         if (!hasSurface) preview_view.holder.removeCallback(this)
@@ -520,9 +528,9 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     /**
      * Requests initialization of the OCR engine with the given parameters.
      *
-     * @param storageRoot Path to location of the tessdata directory to use
-     * @param languageCode Three-letter ISO 639-3 language code for OCR
-     * @param languageName Name of the language for OCR, for example, "English"
+     * @param storageRoot Path to location of the tessdata directory to use.
+     * @param languageCode Three-letter ISO 639-3 language code for OCR.
+     * @param languageName Name of the language for OCR, for example, "English".
      */
     private fun initOcrEngine(storageRoot: File, languageCode: String, languageName: String?) {
         isEngineReady = false
@@ -533,7 +541,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         }
         dialog = ProgressDialog(this)
 
-        // If we have a language that only runs using Cube, then set the ocrEngineMode to Cube
+        // If we have a language that only runs using Cube, then set the ocrEngineMode to Cube.
         if (ocrEngineMode != TessBaseAPI.OEM_CUBE_ONLY) {
             for (s in CUBE_REQUIRED_LANGUAGES) {
                 if (s == languageCode) {
@@ -544,7 +552,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             }
         }
 
-        // If our language doesn't support Cube, then set the ocrEngineMode to Tesseract
+        // If our language doesn't support Cube, then set the ocrEngineMode to Tesseract.
         if (ocrEngineMode != TessBaseAPI.OEM_TESSERACT_ONLY) {
             var cubeOk = false
             for (s in CUBE_SUPPORTED_LANGUAGES) {
@@ -559,7 +567,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             }
         }
 
-        // Display the name of the OCR engine we're initializing in the indeterminate progress dialog box
+        // Display the name of the OCR engine we're initializing in the indeterminate progress dialog box.
         progressDialog = ProgressDialog(this)
         progressDialog!!.setTitle("Please wait")
         val ocrEngineModeName = ocrEngineModeName
@@ -584,7 +592,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             prefs.edit().putBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, false)
         }
 
-        // Start AsyncTask to install language data and init OCR
+        // Start AsyncTask to install language data and init OCR.
         baseApi = TessBaseAPI()
         OcrInitAsyncTask(this, baseApi!!, dialog!!, progressDialog!!, languageCode, languageName, ocrEngineMode)
                 .execute(storageRoot.toString())
@@ -593,13 +601,13 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     /**
      * Displays information relating to the result of OCR, and requests a translation if necessary.
      *
-     * @param ocrResult Object representing successful OCR results
-     * @return True if a non-null result was received for OCR
+     * @param ocrResult Object representing successful OCR results.
+     * @return True if a non-null result was received for OCR.
      */
     internal fun handleOcrDecode(ocrResult: OcrResult): Boolean {
         lastResult = ocrResult
 
-        // Test whether the result is null
+        // Test whether the result is null.
         val ocrResultText = ocrResult.text
         if (ocrResultText.isNullOrBlank()) {
             val toast = Toast.makeText(this, "OCR failed. Please try again.", Toast.LENGTH_SHORT)
@@ -608,7 +616,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             return false
         }
 
-        // Turn off capture-related UI elements
+        // Turn off capture-related UI elements.
         shutter_button.visibility = View.GONE
         status_view_bottom.visibility = View.GONE
         status_view_top.visibility = View.GONE
@@ -623,15 +631,15 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             image_view.setImageBitmap(lastBitmap)
         }
 
-        // Display the recognized text
+        // Display the recognized text.
         source_language_text_view.text = sourceLanguageReadable
         ocr_result_text_view.text = ocrResultText
-        // Crudely scale betweeen 22 and 32 -- bigger font for shorter text
+        // Crudely scale betweeen 22 and 32 -- bigger font for shorter text.
         val scaledSize = Math.max(22, 32 - ocrResultText.length / 4)
         ocr_result_text_view.setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize.toFloat())
 
         if (isTranslationActive) {
-            // Handle translation text fields
+            // Handle translation text fields.
             translation_language_label_text_view.visibility = View.VISIBLE
             with(translation_language_text_view) {
                 text = targetLanguageReadable
@@ -639,12 +647,12 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
                 visibility = View.VISIBLE
             }
 
-            // Activate/re-activate the indeterminate progress indicator
+            // Activate/re-activate the indeterminate progress indicator.
             translation_text_view.visibility = View.GONE
             indeterminate_progress_indicator_view.visibility = View.VISIBLE
             setProgressBarVisibility(true)
 
-            // Get the translation asynchronously
+            // Get the translation asynchronously.
             TranslateAsyncTask(this, sourceLanguageCodeTranslation, targetLanguageCodeTranslation,
                     ocrResultText).execute()
         } else {
@@ -660,12 +668,12 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     /**
      * Displays information relating to the results of a successful real-time OCR request.
      *
-     * @param ocrResult Object representing successful OCR results
+     * @param ocrResult Object representing successful OCR results.
      */
     internal fun handleOcrContinuousDecode(ocrResult: OcrResult) {
         lastResult = ocrResult
 
-        // Send an OcrResultText object to the ViewfinderView for text rendering
+        // Send an OcrResultText object to the ViewfinderView for text rendering.
         // TODO(tbrs): nullability stubbed with .orEmpty. Do something about it.
         val ocrResultText = ocrResult.text.orEmpty()
         viewfinder_view.addResultText(OcrResultText(ocrResultText.orEmpty(),
@@ -681,7 +689,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         val meanConfidence = ocrResult.meanConfidence
 
         if (CONTINUOUS_DISPLAY_RECOGNIZED_TEXT) {
-            // Display the recognized text on the screen
+            // Display the recognized text on the screen.
             with(status_view_top) {
                 text = ocrResultText
                 val scaledSize = Math.max(22, 32 - ocrResultText.length / 4)
@@ -693,7 +701,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         }
 
         if (CONTINUOUS_DISPLAY_METADATA) {
-            // Display recognition-related metadata at the bottom of the screen
+            // Display recognition-related metadata at the bottom of the screen.
             val recognitionTimeRequired = ocrResult.recognitionTimeRequired
             status_view_bottom.textSize = 14f
             status_view_bottom.text = "OCR: " + sourceLanguageReadable + " - Mean confidence: " +
@@ -738,13 +746,13 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     private fun setSpanBetweenTokens(text: CharSequence, token: String,
                                      vararg cs: CharacterStyle): CharSequence {
         var text = text
-        // Start and end refer to the points where the span will apply
+        // Start and end refer to the points where the span will apply.
         val tokenLen = token.length
         val start = text.toString().indexOf(token) + tokenLen
         val end = text.toString().indexOf(token, start)
 
         if (start > -1 && end > -1) {
-            // Copy the spannable string to a mutable spannable string
+            // Copy the spannable string to a mutable spannable string.
             val ssb = SpannableStringBuilder(text)
             for (c in cs)
                 ssb.setSpan(c, start, end, 0)
@@ -857,7 +865,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     /**
      * Enables/disables the shutter button to prevent double-clicks on the button.
      *
-     * @param clickable True if the button should accept a click
+     * @param clickable True if the button should accept a click.
      */
     internal fun setShutterButtonClickable(clickable: Boolean) {
         shutter_button.isClickable = clickable
@@ -909,7 +917,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             }
             if (currentVersion > lastVersion) {
 
-                // Record the last version for which we last displayed the What's New (Help) page
+                // Record the last version for which we last displayed the What's New (Help) page.
                 prefs.edit().putInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, currentVersion).commit()
                 val intent = Intent(this, HelpActivity::class.java)
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET)
@@ -933,20 +941,20 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     private fun retrievePreferences() {
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
 
-        // Retrieve from preferences, and set in this Activity, the language preferences
+        // Retrieve from preferences, and set in this Activity, the language preferences.
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false)
         setSourceLanguage(prefs!!.getString(PreferencesActivity.KEY_SOURCE_LANGUAGE_PREFERENCE, CaptureActivity.DEFAULT_SOURCE_LANGUAGE_CODE))
         setTargetLanguage(prefs!!.getString(PreferencesActivity.KEY_TARGET_LANGUAGE_PREFERENCE, CaptureActivity.DEFAULT_TARGET_LANGUAGE_CODE))
         isTranslationActive = prefs!!.getBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, false)
 
-        // Retrieve from preferences, and set in this Activity, the capture mode preference
+        // Retrieve from preferences, and set in this Activity, the capture mode preference.
         if (prefs!!.getBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, CaptureActivity.DEFAULT_TOGGLE_CONTINUOUS)) {
             isContinuousModeActive = true
         } else {
             isContinuousModeActive = false
         }
 
-        // Retrieve from preferences, and set in this Activity, the page segmentation mode preference
+        // Retrieve from preferences, and set in this Activity, the page segmentation mode preference.
         val pageSegmentationModes = resources.getStringArray(R.array.pagesegmentationmodes)
         val pageSegmentationModeName = prefs!!.getString(PreferencesActivity.KEY_PAGE_SEGMENTATION_MODE, pageSegmentationModes[0])
         if (pageSegmentationModeName == pageSegmentationModes[0]) {
@@ -969,7 +977,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             pageSegmentationMode = TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT
         }
 
-        // Retrieve from preferences, and set in this Activity, the OCR engine mode
+        // Retrieve from preferences, and set in this Activity, the OCR engine mode.
         val ocrEngineModes = resources.getStringArray(R.array.ocrenginemodes)
         val ocrEngineModeName = prefs!!.getString(PreferencesActivity.KEY_OCR_ENGINE_MODE, ocrEngineModes[0])
         if (ocrEngineModeName == ocrEngineModes[0]) {
@@ -980,7 +988,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             ocrEngineMode = TessBaseAPI.OEM_TESSERACT_CUBE_COMBINED
         }
 
-        // Retrieve from preferences, and set in this Activity, the character blacklist and whitelist
+        // Retrieve from preferences, and set in this Activity, the character blacklist and whitelist.
         characterBlacklist = OcrCharacterHelper.getBlacklist(prefs!!, sourceLanguageCodeOcr!!)
         characterWhitelist = OcrCharacterHelper.getWhitelist(prefs!!, sourceLanguageCodeOcr!!)
 
@@ -994,54 +1002,26 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      */
     private fun setDefaultPreferences() {
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
-
-        // Continuous preview
         prefs!!.edit().putBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, CaptureActivity.DEFAULT_TOGGLE_CONTINUOUS).commit()
-
-        // Recognition language
         prefs!!.edit().putString(PreferencesActivity.KEY_SOURCE_LANGUAGE_PREFERENCE, CaptureActivity.DEFAULT_SOURCE_LANGUAGE_CODE).commit()
-
-        // Translation
         prefs!!.edit().putBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, CaptureActivity.DEFAULT_TOGGLE_TRANSLATION).commit()
-
-        // Translation target language
         prefs!!.edit().putString(PreferencesActivity.KEY_TARGET_LANGUAGE_PREFERENCE, CaptureActivity.DEFAULT_TARGET_LANGUAGE_CODE).commit()
-
-        // Translator
         prefs!!.edit().putString(PreferencesActivity.KEY_TRANSLATOR, CaptureActivity.DEFAULT_TRANSLATOR).commit()
-
-        // OCR Engine
         prefs!!.edit().putString(PreferencesActivity.KEY_OCR_ENGINE_MODE, CaptureActivity.DEFAULT_OCR_ENGINE_MODE).commit()
-
-        // Autofocus
         prefs!!.edit().putBoolean(PreferencesActivity.KEY_AUTO_FOCUS, CaptureActivity.DEFAULT_TOGGLE_AUTO_FOCUS).commit()
-
-        // Disable problematic focus modes
         prefs!!.edit().putBoolean(PreferencesActivity.KEY_DISABLE_CONTINUOUS_FOCUS, CaptureActivity.DEFAULT_DISABLE_CONTINUOUS_FOCUS).commit()
-
-        // Beep
         prefs!!.edit().putBoolean(PreferencesActivity.KEY_PLAY_BEEP, CaptureActivity.DEFAULT_TOGGLE_BEEP).commit()
-
-        // Character blacklist
         prefs!!.edit().putString(PreferencesActivity.KEY_CHARACTER_BLACKLIST,
                 OcrCharacterHelper.getDefaultBlacklist(CaptureActivity.DEFAULT_SOURCE_LANGUAGE_CODE)).commit()
-
-        // Character whitelist
         prefs!!.edit().putString(PreferencesActivity.KEY_CHARACTER_WHITELIST,
                 OcrCharacterHelper.getDefaultWhitelist(CaptureActivity.DEFAULT_SOURCE_LANGUAGE_CODE)).commit()
-
-        // Page segmentation mode
         prefs!!.edit().putString(PreferencesActivity.KEY_PAGE_SEGMENTATION_MODE, CaptureActivity.DEFAULT_PAGE_SEGMENTATION_MODE).commit()
-
-        // Reversed camera image
         prefs!!.edit().putBoolean(PreferencesActivity.KEY_REVERSE_IMAGE, CaptureActivity.DEFAULT_TOGGLE_REVERSED_IMAGE).commit()
-
-        // Light
         prefs!!.edit().putBoolean(PreferencesActivity.KEY_TOGGLE_LIGHT, CaptureActivity.DEFAULT_TOGGLE_LIGHT).commit()
     }
 
     internal fun displayProgressDialog() {
-        // Set up the indeterminate progress dialog box
+        // Set up the indeterminate progress dialog box.
         progressDialog = ProgressDialog(this)
         progressDialog!!.setTitle("Please wait")
         val ocrEngineModeName = ocrEngineModeName
@@ -1057,8 +1037,8 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     /**
      * Displays an error message dialog box to the user on the UI thread.
      *
-     * @param title The title for the dialog box
-     * @param message The error message to be displayed
+     * @param title The title for the dialog box.
+     * @param message The error message to be displayed.
      */
     internal fun showErrorMessage(title: String, message: String) {
         AlertDialog.Builder(this)
@@ -1122,13 +1102,15 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         private val DISPLAY_SHUTTER_BUTTON = true
 
         /** Languages for which Cube data is available.  */
-        internal val CUBE_SUPPORTED_LANGUAGES = arrayOf("ara", // Arabic
+        internal val CUBE_SUPPORTED_LANGUAGES = arrayOf(
+                "ara", // Arabic
                 "eng", // English
                 "hin" // Hindi
         )
 
         /** Languages that require Cube, and cannot run using Tesseract.  */
-        private val CUBE_REQUIRED_LANGUAGES = arrayOf("ara" // Arabic
+        private val CUBE_REQUIRED_LANGUAGES = arrayOf(
+                "ara" // Arabic
         )
 
         /** Resource to use for data file downloads.  */
@@ -1143,16 +1125,17 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         /** Minimum mean confidence score necessary to not reject single-shot OCR result. Currently unused.  */
         internal val MINIMUM_MEAN_CONFIDENCE = 0 // 0 means don't reject any scored results
 
-        // Context menu
+        // Context menu.
         private val SETTINGS_ID = Menu.FIRST
         private val ABOUT_ID = Menu.FIRST + 1
 
-        // Options menu, for copy to clipboard
+        // Options menu, for copy to clipboard.
         private val OPTIONS_COPY_RECOGNIZED_TEXT_ID = Menu.FIRST
         private val OPTIONS_COPY_TRANSLATED_TEXT_ID = Menu.FIRST + 1
         private val OPTIONS_SHARE_RECOGNIZED_TEXT_ID = Menu.FIRST + 2
         private val OPTIONS_SHARE_TRANSLATED_TEXT_ID = Menu.FIRST + 3
+        // True if this is the first time the app is being run.
         internal var firstLaunch: Boolean = false
-            private set // True if this is the first time the app is being run
+            private set
     }
 }
