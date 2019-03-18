@@ -25,4 +25,6 @@
 
     <string name="dialog_no_camera_permission_title">Access to your phone</string>
     <string name="dialog_no_camera_permission_message">Application can\'t work without access to your camera. Closing.</string>
+    <string name="dialog_error_generic_title">Error</string>
+    <string name="dialog_error_camera_message">Could not initialize camera. Please try restarting application or device.</string>
 </resources>
