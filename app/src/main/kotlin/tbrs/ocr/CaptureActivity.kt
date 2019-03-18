@@ -434,13 +434,16 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             // Creating the handler starts the preview, which can also throw a RuntimeException.
             handler = CaptureActivityHandler(this, cameraManager!!, isContinuousModeActive)
         } catch (ioe: IOException) {
-            showErrorMessage("Error", "Could not initialize camera. Please try restarting device.")
+            exitOnCameraError()
         } catch (e: RuntimeException) {
             // Barcode Scanner has seen crashes in the wild of this variety:
             // java.?lang.?RuntimeException: Fail to connect to camera service.
-            showErrorMessage("Error", "Could not initialize camera. Please try restarting device.")
+            exitOnCameraError()
         }
     }
+
+    private fun exitOnCameraError() =
+            showErrorMessage(R.string.dialog_error_generic_title, R.string.dialog_error_camera_message)
 
     private fun exitOnCameraInaccessible() = showErrorMessage(R.string.dialog_no_camera_permission_title,
             R.string.dialog_no_camera_permission_message)
