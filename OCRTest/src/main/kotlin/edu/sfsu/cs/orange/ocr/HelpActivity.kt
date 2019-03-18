@@ -19,7 +19,6 @@ package edu.sfsu.cs.orange.ocr
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
-import android.content.DialogInterface
 import android.content.Intent
 import android.net.MailTo
 import android.net.Uri
@@ -29,7 +28,6 @@ import android.view.KeyEvent
 import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Button
 
 /**
  * Activity to display informational pages to the user in a WebView.
@@ -40,11 +38,7 @@ class HelpActivity : Activity() {
 
     private var webView: WebView? = null
 
-    private val doneListener = object : Button.OnClickListener {
-        override fun onClick(view: View) {
-            finish()
-        }
-    }
+    private val doneListener = View.OnClickListener { finish() }
 
     override fun onCreate(icicle: Bundle?) {
         super.onCreate(icicle)

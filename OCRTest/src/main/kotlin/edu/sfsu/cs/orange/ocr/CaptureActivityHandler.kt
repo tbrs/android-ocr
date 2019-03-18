@@ -16,16 +16,12 @@
  */
 package edu.sfsu.cs.orange.ocr
 
-import edu.sfsu.cs.orange.ocr.CaptureActivity
-import edu.sfsu.cs.orange.ocr.R
-import edu.sfsu.cs.orange.ocr.camera.CameraManager
-import edu.sfsu.cs.orange.ocr.OcrResult
-
 import android.os.Handler
 import android.os.Message
 import android.util.Log
 import android.view.Gravity
 import android.widget.Toast
+import edu.sfsu.cs.orange.ocr.camera.CameraManager
 
 /**
  * This class handles all the messaging which comprises the state machine for capture.
@@ -187,7 +183,7 @@ internal class CaptureActivityHandler(private val activity: CaptureActivity, pri
         cameraManager!!.startPreview()
 
         // Continue requesting decode of images
-        cameraManager.requestOcrDecode(decodeThread.handler, R.id.ocr_continuous_decode)
+        cameraManager.requestOcrDecode(decodeThread.getHandler(), R.id.ocr_continuous_decode)
         activity.drawViewfinder()
     }
 
@@ -196,7 +192,7 @@ internal class CaptureActivityHandler(private val activity: CaptureActivity, pri
      */
     private fun ocrDecode() {
         state = State.PREVIEW_PAUSED
-        cameraManager!!.requestOcrDecode(decodeThread.handler, R.id.ocr_decode)
+        cameraManager!!.requestOcrDecode(decodeThread.getHandler(), R.id.ocr_decode)
     }
 
     /**

@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008 ZXing authors
  * Copyright 2011 Robert Theis
+ * Copyright 2019 tbrs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +71,7 @@ import java.io.IOException
  * The code for this class was adapted from the ZXing project: http://code.google.com/p/zxing/
  */
 class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShutterButtonListener {
-    internal val cameraManager: CameraManager? = null
+    internal var cameraManager: CameraManager? = null
         private set
     private var handler: CaptureActivityHandler? = null
     private var viewfinderView: ViewfinderView? = null
@@ -89,10 +90,10 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     private var beepManager: BeepManager? = null
     internal var baseApi: TessBaseAPI? = null
         private set // Java interface for the Tesseract OCR engine
-    private var sourceLanguageCodeOcr: String? = null // ISO 639-3 language code
+    private var sourceLanguageCodeOcr: String = "" // ISO 639-3 language code
     private var sourceLanguageReadable: String? = null // Language name, for example, "English"
-    private var sourceLanguageCodeTranslation: String? = null // ISO 639-1 language code
-    private var targetLanguageCodeTranslation: String? = null // ISO 639-1 language code
+    private var sourceLanguageCodeTranslation: String = "" // ISO 639-1 language code
+    private var targetLanguageCodeTranslation: String = "" // ISO 639-1 language code
     private var targetLanguageReadable: String? = null // Language name, for example, "English"
     private var pageSegmentationMode = TessBaseAPI.PageSegMode.PSM_AUTO_OSD
     private var ocrEngineMode = TessBaseAPI.OEM_TESSERACT_ONLY
@@ -218,8 +219,10 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
         progressView = findViewById(R.id.indeterminate_progress_indicator_view) as View
 
-        cameraManager = CameraManager(application)
-        viewfinderView!!.setCameraManager(cameraManager)
+        with(CameraManager(application)) {
+            cameraManager = this
+            viewfinderView!!.setCameraManager(this)
+        }
 
         // Set listener to change the size of the viewfinder rectangle.
         viewfinderView!!.setOnTouchListener(object : View.OnTouchListener {
@@ -531,15 +534,15 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
 
     /** Sets the necessary language code values for the given OCR language.  */
-    private fun setSourceLanguage(languageCode: String?): Boolean {
+    private fun setSourceLanguage(languageCode: String): Boolean {
         sourceLanguageCodeOcr = languageCode
-        sourceLanguageCodeTranslation = LanguageCodeHelper.mapLanguageCode(languageCode!!)
+        sourceLanguageCodeTranslation = LanguageCodeHelper.mapLanguageCode(languageCode)
         sourceLanguageReadable = LanguageCodeHelper.getOcrLanguageName(this, languageCode)
         return true
     }
 
     /** Sets the necessary language code values for the translation target language.  */
-    private fun setTargetLanguage(languageCode: String?): Boolean {
+    private fun setTargetLanguage(languageCode: String): Boolean {
         targetLanguageCodeTranslation = languageCode
         targetLanguageReadable = LanguageCodeHelper.getTranslationLanguageName(this, languageCode)
         return true
@@ -552,7 +555,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      * @param languageCode Three-letter ISO 639-3 language code for OCR
      * @param languageName Name of the language for OCR, for example, "English"
      */
-    private fun initOcrEngine(storageRoot: File, languageCode: String?, languageName: String?) {
+    private fun initOcrEngine(storageRoot: File, languageCode: String, languageName: String?) {
         isEngineReady = false
 
         // Set up the dialog box for the thermometer-style download progress indicator
@@ -614,7 +617,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
         // Start AsyncTask to install language data and init OCR
         baseApi = TessBaseAPI()
-        OcrInitAsyncTask(this, baseApi, dialog, progressDialog, languageCode, languageName, ocrEngineMode)
+        OcrInitAsyncTask(this, baseApi!!, dialog!!, progressDialog!!, languageCode, languageName, ocrEngineMode)
                 .execute(storageRoot.toString())
     }
 
@@ -628,7 +631,8 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         lastResult = ocrResult
 
         // Test whether the result is null
-        if (ocrResult.text == null || ocrResult.text == "") {
+        val ocrResultText = ocrResult.text
+        if (ocrResultText.isNullOrBlank()) {
             val toast = Toast.makeText(this, "OCR failed. Please try again.", Toast.LENGTH_SHORT)
             toast.setGravity(Gravity.TOP, 0, 0)
             toast.show()
@@ -644,7 +648,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         resultView!!.visibility = View.VISIBLE
 
         val bitmapImageView = findViewById(R.id.image_view) as ImageView
-        lastBitmap = ocrResult.bitmap
+        lastBitmap = ocrResult.getBitmap()
         if (lastBitmap == null) {
             bitmapImageView.setImageBitmap(BitmapFactory.decodeResource(resources,
                     R.drawable.ic_launcher))
@@ -656,9 +660,9 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         val sourceLanguageTextView = findViewById(R.id.source_language_text_view) as TextView
         sourceLanguageTextView.text = sourceLanguageReadable
         val ocrResultTextView = findViewById(R.id.ocr_result_text_view) as TextView
-        ocrResultTextView.text = ocrResult.text
+        ocrResultTextView.text = ocrResultText
         // Crudely scale betweeen 22 and 32 -- bigger font for shorter text
-        val scaledSize = Math.max(22, 32 - ocrResult.text.length / 4)
+        val scaledSize = Math.max(22, 32 - ocrResultText.length / 4)
         ocrResultTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize.toFloat())
 
         val translationLanguageLabelTextView = findViewById(R.id.translation_language_label_text_view) as TextView
@@ -678,7 +682,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
             // Get the translation asynchronously
             TranslateAsyncTask(this, sourceLanguageCodeTranslation, targetLanguageCodeTranslation,
-                    ocrResult.text).execute()
+                    ocrResultText).execute()
         } else {
             translationLanguageLabelTextView.visibility = View.GONE
             translationLanguageTextView.visibility = View.GONE
@@ -695,26 +699,27 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      * @param ocrResult Object representing successful OCR results
      */
     internal fun handleOcrContinuousDecode(ocrResult: OcrResult) {
-
         lastResult = ocrResult
 
         // Send an OcrResultText object to the ViewfinderView for text rendering
-        viewfinderView!!.addResultText(OcrResultText(ocrResult.text,
-                ocrResult.wordConfidences,
+        // TODO(tbrs): nullability stubbed with .orEmpty. Do something about it.
+        val ocrResultText = ocrResult.text.orEmpty()
+        viewfinderView!!.addResultText(OcrResultText(ocrResultText.orEmpty(),
+                ocrResult.wordConfidences!!,
                 ocrResult.meanConfidence,
                 ocrResult.bitmapDimensions,
-                ocrResult.regionBoundingBoxes,
-                ocrResult.textlineBoundingBoxes,
-                ocrResult.stripBoundingBoxes,
-                ocrResult.wordBoundingBoxes,
-                ocrResult.characterBoundingBoxes))
+                ocrResult.regionBoundingBoxes.orEmpty(),
+                ocrResult.textlineBoundingBoxes.orEmpty(),
+                ocrResult.stripBoundingBoxes.orEmpty(),
+                ocrResult.wordBoundingBoxes.orEmpty(),
+                ocrResult.characterBoundingBoxes.orEmpty()))
 
         val meanConfidence = ocrResult.meanConfidence
 
         if (CONTINUOUS_DISPLAY_RECOGNIZED_TEXT) {
             // Display the recognized text on the screen
-            statusViewTop!!.text = ocrResult.text
-            val scaledSize = Math.max(22, 32 - ocrResult.text.length / 4)
+            statusViewTop!!.text = ocrResultText
+            val scaledSize = Math.max(22, 32 - ocrResultText.length / 4)
             statusViewTop!!.setTextSize(TypedValue.COMPLEX_UNIT_SP, scaledSize.toFloat())
             statusViewTop!!.setTextColor(Color.BLACK)
             statusViewTop!!.setBackgroundResource(R.color.status_top_text_background)
@@ -1015,8 +1020,8 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         }
 
         // Retrieve from preferences, and set in this Activity, the character blacklist and whitelist
-        characterBlacklist = OcrCharacterHelper.getBlacklist(prefs, sourceLanguageCodeOcr!!)
-        characterWhitelist = OcrCharacterHelper.getWhitelist(prefs, sourceLanguageCodeOcr!!)
+        characterBlacklist = OcrCharacterHelper.getBlacklist(prefs!!, sourceLanguageCodeOcr!!)
+        characterWhitelist = OcrCharacterHelper.getWhitelist(prefs!!, sourceLanguageCodeOcr!!)
 
         prefs!!.registerOnSharedPreferenceChangeListener(listener)
 

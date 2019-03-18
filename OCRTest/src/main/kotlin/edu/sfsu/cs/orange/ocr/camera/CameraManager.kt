@@ -18,17 +18,13 @@
 package edu.sfsu.cs.orange.ocr.camera
 
 import android.content.Context
-import android.content.SharedPreferences
-import android.graphics.Point
 import android.graphics.Rect
 import android.hardware.Camera
 import android.os.Handler
 import android.preference.PreferenceManager
-import android.util.Log
 import android.view.SurfaceHolder
 import edu.sfsu.cs.orange.ocr.PlanarYUVLuminanceSource
 import edu.sfsu.cs.orange.ocr.PreferencesActivity
-
 import java.io.IOException
 
 /**
@@ -42,7 +38,7 @@ class CameraManager(private val context: Context) {
     private val configManager: CameraConfigurationManager
     private var camera: Camera? = null
     private var autoFocusManager: AutoFocusManager? = null
-    private var framingRect: Rect? = null
+    internal var framingRect: Rect? = null
     private var framingRectInPreview: Rect? = null
     private var initialized: Boolean = false
     private var previewing: Boolean = false

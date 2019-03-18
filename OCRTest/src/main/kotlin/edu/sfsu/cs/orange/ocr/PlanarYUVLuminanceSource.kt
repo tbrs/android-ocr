@@ -17,6 +17,7 @@
 package edu.sfsu.cs.orange.ocr
 
 import android.graphics.Bitmap
+import kotlin.experimental.and
 
 /**
  * This object extends LuminanceSource around an array of YUV data returned from the camera driver,
@@ -78,7 +79,7 @@ class PlanarYUVLuminanceSource(private val yuvData: ByteArray,
         }
     }
 
-    override fun getRow(y: Int, row: ByteArray?): ByteArray {
+    override fun getRow(y: Int, row: ByteArray): ByteArray {
         var row = row
         if (y < 0 || y >= height) {
             throw IllegalArgumentException("Requested row is outside the image: $y")
@@ -113,7 +114,7 @@ class PlanarYUVLuminanceSource(private val yuvData: ByteArray,
         for (y in 0 until height) {
             val outputOffset = y * width
             for (x in 0 until width) {
-                val grey = yuv[inputOffset + x] and 0xff
+                val grey = yuv[inputOffset + x] and 0xff.toByte()
                 pixels[outputOffset + x] = -0x1000000 or grey * 0x00010101
             }
             inputOffset += dataWidth

@@ -44,7 +44,7 @@ class OcrResult {
 
     private var paint: Paint? = null
 
-    private// Draw bounding boxes around each word
+    // Draw bounding boxes around each word
     //    // Draw bounding boxes around each character
     //    for (int i = 0; i < characterBoundingBoxes.size(); i++) {
     //      paint.setAlpha(0xA0);
@@ -54,7 +54,7 @@ class OcrResult {
     //      Rect r = characterBoundingBoxes.get(i);
     //      canvas.drawRect(r, paint);
     //    }
-    val annotatedBitmap: Bitmap
+    private val annotatedBitmap: Bitmap
         get() {
             val canvas = Canvas(bitmap!!)
             for (i in wordBoundingBoxes!!.indices) {
@@ -66,7 +66,7 @@ class OcrResult {
                 canvas.drawRect(r, paint!!)
             }
 
-            return bitmap
+            return bitmap!!
         }
 
     val bitmapDimensions: Point

@@ -64,7 +64,7 @@ internal class CameraConfigurationManager(private val context: Context) {
         }
         screenResolution = Point(width, height)
         Log.i(TAG, "Screen resolution: " + screenResolution!!)
-        cameraResolution = findBestPreviewSizeValue(parameters, screenResolution)
+        cameraResolution = findBestPreviewSizeValue(parameters, screenResolution!!)
         Log.i(TAG, "Camera resolution: " + cameraResolution!!)
     }
 
@@ -122,7 +122,7 @@ internal class CameraConfigurationManager(private val context: Context) {
 
         // Sort by size, descending
         val supportedPreviewSizes = ArrayList(parameters.supportedPreviewSizes)
-        Collections.sort<Size>(supportedPreviewSizes, Comparator<Camera.Size> { a, b ->
+        Collections.sort<Camera.Size>(supportedPreviewSizes, Comparator<Camera.Size> { a, b ->
             val aPixels = a.height * a.width
             val bPixels = b.height * b.width
             if (bPixels < aPixels) {
