@@ -31,11 +31,13 @@
         <item>Vertical block</item>
         <item>Sparse text</item>
     </string-array>
-    
+
+    <!-- Item order should correspond to OcrEngineMode values in TessBaseAPI.java. -->
     <string-array name="ocrenginemodes">
         <item>Tesseract</item>
         <item>Cube</item>
         <item>Both</item>
+        <item>Default</item>
     </string-array>
 
 	<string-array name="translators">
