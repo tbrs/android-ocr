@@ -161,19 +161,8 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      *
      * @return OCR engine mode
      */
-    internal val ocrEngineModeName: String
-        get() {
-            var ocrEngineModeName = ""
-            val ocrEngineModes = resources.getStringArray(R.array.ocrenginemodes)
-            if (ocrEngineMode == TessBaseAPI.OEM_TESSERACT_ONLY) {
-                ocrEngineModeName = ocrEngineModes[0]
-            } else if (ocrEngineMode == TessBaseAPI.OEM_CUBE_ONLY) {
-                ocrEngineModeName = ocrEngineModes[1]
-            } else if (ocrEngineMode == TessBaseAPI.OEM_TESSERACT_CUBE_COMBINED) {
-                ocrEngineModeName = ocrEngineModes[2]
-            }
-            return ocrEngineModeName
-        }
+    private val ocrEngineModeName: String
+        get() = resources.getStringArray(R.array.ocrenginemodes).getOrElse(ocrEngineMode) { "" }
 
     internal fun getHandler(): Handler? {
         return handler
