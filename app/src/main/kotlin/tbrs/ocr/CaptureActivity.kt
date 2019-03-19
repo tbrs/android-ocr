@@ -325,9 +325,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
         isPaused = false
 
-        if (handler != null) {
-            handler!!.resetState()
-        }
+        handler?.resetState()
         if (baseApi != null) {
             baseApi!!.pageSegMode = pageSegmentationMode
             baseApi!!.setVariable(TessBaseAPI.VAR_CHAR_BLACKLIST, characterBlacklist)
@@ -344,7 +342,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     /** Called when the shutter button is pressed in continuous mode.  */
     internal fun onShutterButtonPressContinuous() {
         isPaused = true
-        handler!!.stop()
+        handler?.stop()
         beepManager!!.playBeepSoundAndVibrate()
         if (lastResult != null) {
             handleOcrDecode(lastResult!!)
@@ -362,7 +360,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         resetStatusView()
         setStatusViewForContinuous()
         DecodeHandler.resetDecodeState()
-        handler!!.resetState()
+        handler?.resetState()
         if (DISPLAY_SHUTTER_BUTTON) shutter_button.visibility = View.VISIBLE
     }
 
@@ -436,9 +434,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             R.string.dialog_no_camera_permission_message)
 
     override fun onPause() {
-        if (handler != null) {
-            handler!!.quitSynchronously()
-        }
+        handler?.quitSynchronously()
 
         // Stop using the camera, to avoid conflicting with other camera-based apps.
         cameraManager!!.closeDriver()
@@ -447,11 +443,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         super.onPause()
     }
 
-    internal fun stopHandler() {
-        if (handler != null) {
-            handler!!.stop()
-        }
-    }
+    internal fun stopHandler() = handler?.stop()
 
     override fun onDestroy() {
         if (baseApi != null) {
@@ -478,16 +470,14 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             } else {
                 // Go back to previewing in regular OCR mode.
                 resetStatusView()
-                if (handler != null) {
-                    handler!!.sendEmptyMessage(R.id.restart_preview)
-                }
+                handler?.sendEmptyMessage(R.id.restart_preview)
                 return true
             }
         } else if (keyCode == KeyEvent.KEYCODE_CAMERA) {
             if (isContinuousModeActive) {
                 onShutterButtonPressContinuous()
             } else {
-                handler!!.hardwareShutterButtonClick()
+                handler?.hardwareShutterButtonClick()
             }
             return true
         } else if (keyCode == KeyEvent.KEYCODE_FOCUS) {
@@ -600,9 +590,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         progressDialog!!.setCancelable(false)
         progressDialog!!.show()
 
-        if (handler != null) {
-            handler!!.quitSynchronously()
-        }
+        handler?.quitSynchronously()
 
         // Disable continuous mode if we're using Cube. This will prevent bad states for devices
         // with low memory that crash when running OCR with Cube, and prevent unwanted delays.
@@ -899,9 +887,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         if (isContinuousModeActive) {
             onShutterButtonPressContinuous()
         } else {
-            if (handler != null) {
-                handler!!.shutterButtonClick()
-            }
+            handler?.shutterButtonClick()
         }
     }
 
