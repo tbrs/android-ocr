@@ -29,7 +29,7 @@ dependencies {
     implementation files('libs/jtar-1.0.4.jar')
     implementation files('libs/microsoft-translator-java-api-0.6-mod.jar')
 
-    implementation 'com.rmtheis:tess-two:6.0.4'
+    implementation 'com.rmtheis:tess-two:9.0.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.1.0-alpha04'
 }
