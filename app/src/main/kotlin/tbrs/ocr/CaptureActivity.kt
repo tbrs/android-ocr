@@ -164,9 +164,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     private val ocrEngineModeName: String
         get() = resources.getStringArray(R.array.ocrenginemodes).getOrElse(ocrEngineMode) { "" }
 
-    internal fun getHandler(): Handler? {
-        return handler
-    }
+    internal fun getHandler(): Handler? = handler
 
     public override fun onCreate(icicle: Bundle?) {
         super.onCreate(icicle)
