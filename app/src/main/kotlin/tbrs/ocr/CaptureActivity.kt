@@ -452,42 +452,37 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         super.onDestroy()
     }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-
-            // First check if we're paused in continuous mode, and if so, just unpause.
-            if (isPaused) {
-                Log.d(TAG, "only resuming continuous recognition, not quitting...")
-                resumeContinuousDecoding()
-                return true
+    override fun onKeyDown(keyCode: Int, event: KeyEvent) = when (keyCode) {
+        KeyEvent.KEYCODE_BACK -> {
+            when {
+                isPaused -> {
+                    // We're paused in continuous mode. Resume.
+                    resumeContinuousDecoding()
+                }
+                lastResult == null -> {
+                    // We're not viewing an OCR result. Exit.
+                    setResult(Activity.RESULT_CANCELED)
+                    finish()
+                }
+                else -> {
+                    // Go back to previewing in regular OCR mode.
+                    resetStatusView()
+                    handler?.sendEmptyMessage(R.id.restart_preview)
+                }
             }
-
-            // Exit the app if we're not viewing an OCR result.
-            if (lastResult == null) {
-                setResult(Activity.RESULT_CANCELED)
-                finish()
-                return true
-            } else {
-                // Go back to previewing in regular OCR mode.
-                resetStatusView()
-                handler?.sendEmptyMessage(R.id.restart_preview)
-                return true
-            }
-        } else if (keyCode == KeyEvent.KEYCODE_CAMERA) {
-            if (isContinuousModeActive) {
-                onShutterButtonPressContinuous()
-            } else {
-                handler?.hardwareShutterButtonClick()
-            }
-            return true
-        } else if (keyCode == KeyEvent.KEYCODE_FOCUS) {
-            // Only perform autofocus if user is not holding down the button.
-            if (event.repeatCount == 0) {
-                cameraManager!!.requestAutoFocus(500L)
-            }
-            return true
+            true
         }
-        return super.onKeyDown(keyCode, event)
+        KeyEvent.KEYCODE_CAMERA -> if (isContinuousModeActive) {
+            onShutterButtonPressContinuous()
+        } else {
+            handler?.hardwareShutterButtonClick()
+        }.let { true }
+        KeyEvent.KEYCODE_FOCUS -> {
+            // Only perform autofocus if user is not holding down the button.
+            if (event.repeatCount == 0) cameraManager!!.requestAutoFocus(500L)
+            true
+        }
+        else -> super.onKeyDown(keyCode, event)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
