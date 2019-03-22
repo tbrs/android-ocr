@@ -56,6 +56,7 @@ import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import com.googlecode.tesseract.android.TessBaseAPI
 import kotlinx.android.synthetic.main.capture.*
 import tbrs.ocr.camera.CameraManager
@@ -552,8 +553,9 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             for (s in CUBE_REQUIRED_LANGUAGES) {
                 if (s == languageCode) {
                     ocrEngineMode = TessBaseAPI.OEM_CUBE_ONLY
-                    val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-                    prefs.edit().putString(PreferencesActivity.KEY_OCR_ENGINE_MODE, ocrEngineModeName).commit()
+                    PreferenceManager.getDefaultSharedPreferences(this).edit {
+                        putString(PreferencesActivity.KEY_OCR_ENGINE_MODE, ocrEngineModeName)
+                    }
                 }
             }
         }
@@ -568,8 +570,9 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             }
             if (!cubeOk) {
                 ocrEngineMode = TessBaseAPI.OEM_TESSERACT_ONLY
-                val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-                prefs.edit().putString(PreferencesActivity.KEY_OCR_ENGINE_MODE, ocrEngineModeName).commit()
+                PreferenceManager.getDefaultSharedPreferences(this).edit {
+                    putString(PreferencesActivity.KEY_OCR_ENGINE_MODE, ocrEngineModeName)
+                }
             }
         }
 
@@ -592,8 +595,9 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         if (ocrEngineMode == TessBaseAPI.OEM_CUBE_ONLY || ocrEngineMode == TessBaseAPI.OEM_TESSERACT_CUBE_COMBINED) {
             Log.d(TAG, "Disabling continuous preview")
             isContinuousModeActive = false
-            val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-            prefs.edit().putBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, false)
+            PreferenceManager.getDefaultSharedPreferences(this).edit {
+                putBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, false)
+            }
         }
 
         // Start AsyncTask to install language data and init OCR.
@@ -918,9 +922,10 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
                 firstLaunch = false
             }
             if (currentVersion > lastVersion) {
-
                 // Record the last version for which we last displayed the What's New (Help) page.
-                prefs.edit().putInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, currentVersion).commit()
+                prefs.edit {
+                    putInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, currentVersion)
+                }
                 val intent = Intent(this, HelpActivity::class.java)
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET)
 
@@ -1002,24 +1007,24 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     /**
      * Sets default values for preferences. To be called the first time this app is run.
      */
-    private fun setDefaultPreferences() {
-        prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        prefs!!.edit().putBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, DEFAULT_TOGGLE_CONTINUOUS).commit()
-        prefs!!.edit().putString(PreferencesActivity.KEY_SOURCE_LANGUAGE_PREFERENCE, DEFAULT_SOURCE_LANGUAGE_CODE).commit()
-        prefs!!.edit().putBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, DEFAULT_TOGGLE_TRANSLATION).commit()
-        prefs!!.edit().putString(PreferencesActivity.KEY_TARGET_LANGUAGE_PREFERENCE, DEFAULT_TARGET_LANGUAGE_CODE).commit()
-        prefs!!.edit().putString(PreferencesActivity.KEY_TRANSLATOR, DEFAULT_TRANSLATOR).commit()
-        prefs!!.edit().putString(PreferencesActivity.KEY_OCR_ENGINE_MODE, DEFAULT_OCR_ENGINE_MODE).commit()
-        prefs!!.edit().putBoolean(PreferencesActivity.KEY_AUTO_FOCUS, DEFAULT_TOGGLE_AUTO_FOCUS).commit()
-        prefs!!.edit().putBoolean(PreferencesActivity.KEY_DISABLE_CONTINUOUS_FOCUS, DEFAULT_DISABLE_CONTINUOUS_FOCUS).commit()
-        prefs!!.edit().putBoolean(PreferencesActivity.KEY_PLAY_BEEP, DEFAULT_TOGGLE_BEEP).commit()
-        prefs!!.edit().putString(PreferencesActivity.KEY_CHARACTER_BLACKLIST,
-                OcrCharacterHelper.getDefaultBlacklist(DEFAULT_SOURCE_LANGUAGE_CODE)).commit()
-        prefs!!.edit().putString(PreferencesActivity.KEY_CHARACTER_WHITELIST,
-                OcrCharacterHelper.getDefaultWhitelist(DEFAULT_SOURCE_LANGUAGE_CODE)).commit()
-        prefs!!.edit().putString(PreferencesActivity.KEY_PAGE_SEGMENTATION_MODE, DEFAULT_PAGE_SEGMENTATION_MODE).commit()
-        prefs!!.edit().putBoolean(PreferencesActivity.KEY_REVERSE_IMAGE, DEFAULT_TOGGLE_REVERSED_IMAGE).commit()
-        prefs!!.edit().putBoolean(PreferencesActivity.KEY_TOGGLE_LIGHT, DEFAULT_TOGGLE_LIGHT).commit()
+    private fun setDefaultPreferences() = with(PreferenceManager.getDefaultSharedPreferences(this)) {
+        prefs = this
+        edit {
+            putBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, DEFAULT_TOGGLE_CONTINUOUS)
+            putString(PreferencesActivity.KEY_SOURCE_LANGUAGE_PREFERENCE, DEFAULT_SOURCE_LANGUAGE_CODE)
+            putBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, DEFAULT_TOGGLE_TRANSLATION)
+            putString(PreferencesActivity.KEY_TARGET_LANGUAGE_PREFERENCE, DEFAULT_TARGET_LANGUAGE_CODE)
+            putString(PreferencesActivity.KEY_TRANSLATOR, DEFAULT_TRANSLATOR)
+            putString(PreferencesActivity.KEY_OCR_ENGINE_MODE, DEFAULT_OCR_ENGINE_MODE)
+            putBoolean(PreferencesActivity.KEY_AUTO_FOCUS, DEFAULT_TOGGLE_AUTO_FOCUS)
+            putBoolean(PreferencesActivity.KEY_DISABLE_CONTINUOUS_FOCUS, DEFAULT_DISABLE_CONTINUOUS_FOCUS)
+            putBoolean(PreferencesActivity.KEY_PLAY_BEEP, DEFAULT_TOGGLE_BEEP)
+            putString(PreferencesActivity.KEY_CHARACTER_BLACKLIST, OcrCharacterHelper.getDefaultBlacklist(DEFAULT_SOURCE_LANGUAGE_CODE))
+            putString(PreferencesActivity.KEY_CHARACTER_WHITELIST, OcrCharacterHelper.getDefaultWhitelist(DEFAULT_SOURCE_LANGUAGE_CODE))
+            putString(PreferencesActivity.KEY_PAGE_SEGMENTATION_MODE, DEFAULT_PAGE_SEGMENTATION_MODE)
+            putBoolean(PreferencesActivity.KEY_REVERSE_IMAGE, DEFAULT_TOGGLE_REVERSED_IMAGE)
+            putBoolean(PreferencesActivity.KEY_TOGGLE_LIGHT, DEFAULT_TOGGLE_LIGHT)
+        }
     }
 
     internal fun displayProgressDialog() {
