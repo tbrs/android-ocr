@@ -9,16 +9,27 @@ android {
         applicationId "tbrs.ocr"
         minSdkVersion 14
         targetSdkVersion 28
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
+        test.java.srcDirs += 'src/test/kotlin'
     }
 
     buildTypes {
         release {
             minifyEnabled true
             proguardFiles 'proguard.cfg'
+        }
+    }
+
+    testOptions {
+        execution 'ANDROIDX_TEST_ORCHESTRATOR'
+
+        unitTests {
+            includeAndroidResources = true
         }
     }
 }
@@ -32,4 +43,10 @@ dependencies {
     implementation 'com.rmtheis:tess-two:9.0.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.1.0-alpha05'
+
+    testImplementation 'androidx.test.ext:junit:1.1.0'
+    testImplementation 'androidx.test:rules:1.1.1'
+    testImplementation 'androidx.test:runner:1.1.1'
+    testImplementation 'com.google.truth:truth:0.43'
+    testImplementation 'org.robolectric:robolectric:4.2.1'
 }

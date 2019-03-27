@@ -20,8 +20,9 @@ import android.text.SpannableStringBuilder
 import android.text.style.CharacterStyle
 
 /**
- * Given either a Spannable String or a regular String and a token, apply
- * the given CharacterStyle to the span between the tokens.
+ * Applies a span between the first and the second occurrences of a token.
+ *
+ * If less than two tokens are found, no span is applied.
  *
  * NOTE: This method was adapted from:
  * http://www.androidengineer.com/2010/08/easy-method-for-formatting-android.html
