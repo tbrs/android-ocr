@@ -16,8 +16,8 @@
 
 package tbrs.ocr.kotlin
 
-import android.text.SpannableStringBuilder
 import android.text.style.CharacterStyle
+import androidx.core.text.toSpannable
 
 /**
  * Applies a span between the first and the second occurrences of a token.
@@ -30,19 +30,10 @@ import android.text.style.CharacterStyle
  * For example, `setSpanBetweenTokens("Hello ##world##!", "##", new
  * ForegroundColorSpan(0xFFFF0000));` will return a CharSequence `"Hello world!"` with `world` in red.
  */
-fun CharSequence.setSpanBetweenTokens(token: String, vararg cs: CharacterStyle): CharSequence {
-    var text = this
-    // Start and end refer to the points where the span will apply.
-    val tokenLen = token.length
-    val start = text.toString().indexOf(token) + tokenLen
-    val end = text.toString().indexOf(token, start)
-
-    if (start > -1 && end > -1) {
-        // Copy the spannable string to a mutable spannable string.
-        val ssb = SpannableStringBuilder(text)
-        for (c in cs)
-            ssb.setSpan(c, start, end, 0)
-        text = ssb
-    }
-    return text
+fun CharSequence.setSpanBetweenTokens(token: String, vararg styles: CharacterStyle): CharSequence {
+    val start = indexOf(token).let { if (it == -1) it else it + token.length }
+    if (start == -1) return this
+    val end = indexOf(token, start)
+    if (end == -1) return this
+    return toSpannable().apply { for (style in styles) setSpan(style, start, end, 0) }
 }
