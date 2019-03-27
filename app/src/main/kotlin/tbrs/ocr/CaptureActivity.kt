@@ -728,7 +728,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
         if (CONTINUOUS_DISPLAY_METADATA) {
             status_view_bottom.textSize = 14f
-            status_view_bottom.text = setSpanBetweenTokens(getString(R.string.continuous_decode_status, sourceLanguageReadable, obj.timeRequired), "-", ForegroundColorSpan(-0x10000))
+            status_view_bottom.text = setSpanBetweenTokens(getString(R.string.continuous_decode_status, sourceLanguageReadable, obj.timeRequired), "-", ForegroundColorSpan(ContextCompat.getColor(this, R.color.red)))
         }
     }
 
