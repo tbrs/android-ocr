@@ -36,8 +36,6 @@ import android.os.Environment
 import android.os.Handler
 import android.preference.PreferenceManager
 import android.text.ClipboardManager
-import android.text.SpannableStringBuilder
-import android.text.style.CharacterStyle
 import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.util.TypedValue
@@ -61,6 +59,7 @@ import com.googlecode.tesseract.android.TessBaseAPI
 import kotlinx.android.synthetic.main.capture.*
 import tbrs.ocr.camera.CameraManager
 import tbrs.ocr.camera.ShutterButton
+import tbrs.ocr.kotlin.setSpanBetweenTokens
 import tbrs.ocr.language.LanguageCodeHelper
 import tbrs.ocr.language.TranslateAsyncTask
 import java.io.File
@@ -735,36 +734,6 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
             status_view_bottom.text = getString(R.string.continuous_decode_status, sourceLanguageReadable, obj.timeRequired)
                     .setSpanBetweenTokens("-", errorStatusSpan)
         }
-    }
-
-    /**
-     * Given either a Spannable String or a regular String and a token, apply
-     * the given CharacterStyle to the span between the tokens.
-     *
-     * NOTE: This method was adapted from:
-     * http://www.androidengineer.com/2010/08/easy-method-for-formatting-android.html
-     *
-     *
-     *
-     * For example, `setSpanBetweenTokens("Hello ##world##!", "##", new
-     * ForegroundColorSpan(0xFFFF0000));` will return a CharSequence `"Hello world!"` with `world` in red.
-     *
-     */
-    private fun CharSequence.setSpanBetweenTokens(token: String, vararg cs: CharacterStyle): CharSequence {
-        var text = this
-        // Start and end refer to the points where the span will apply.
-        val tokenLen = token.length
-        val start = text.toString().indexOf(token) + tokenLen
-        val end = text.toString().indexOf(token, start)
-
-        if (start > -1 && end > -1) {
-            // Copy the spannable string to a mutable spannable string.
-            val ssb = SpannableStringBuilder(text)
-            for (c in cs)
-                ssb.setSpan(c, start, end, 0)
-            text = ssb
-        }
-        return text
     }
 
     override fun onCreateContextMenu(menu: ContextMenu, v: View,
