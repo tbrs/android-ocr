@@ -486,13 +486,10 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         else -> super.onKeyDown(keyCode, event)
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        //    MenuInflater inflater = getMenuInflater();
-        //    inflater.inflate(R.menu.options_menu, menu);
-        super.onCreateOptionsMenu(menu)
+    override fun onCreateOptionsMenu(menu: Menu) = super.onCreateOptionsMenu(menu).let {
         menu.add(0, SETTINGS_ID, 0, "Settings").setIcon(android.R.drawable.ic_menu_preferences)
         menu.add(0, ABOUT_ID, 0, "About").setIcon(android.R.drawable.ic_menu_info_details)
-        return true
+        true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
