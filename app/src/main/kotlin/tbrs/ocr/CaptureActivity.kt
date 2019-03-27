@@ -113,6 +113,10 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     private var isEngineReady: Boolean = false
     private var isPaused: Boolean = false
 
+    private val errorStatusSpan by lazy {
+        ForegroundColorSpan(ContextCompat.getColor(this, R.color.red))
+    }
+
     /** Finds the proper location on the SD card where we can save files.  */
     private val storageDirectory: File?
         get() {
@@ -728,7 +732,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
         if (CONTINUOUS_DISPLAY_METADATA) {
             status_view_bottom.textSize = 14f
-            status_view_bottom.text = setSpanBetweenTokens(getString(R.string.continuous_decode_status, sourceLanguageReadable, obj.timeRequired), "-", ForegroundColorSpan(ContextCompat.getColor(this, R.color.red)))
+            status_view_bottom.text = setSpanBetweenTokens(getString(R.string.continuous_decode_status, sourceLanguageReadable, obj.timeRequired), "-", errorStatusSpan)
         }
     }
 
