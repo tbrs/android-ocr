@@ -732,7 +732,8 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
         if (CONTINUOUS_DISPLAY_METADATA) {
             status_view_bottom.textSize = 14f
-            status_view_bottom.text = setSpanBetweenTokens(getString(R.string.continuous_decode_status, sourceLanguageReadable, obj.timeRequired), "-", errorStatusSpan)
+            status_view_bottom.text = getString(R.string.continuous_decode_status, sourceLanguageReadable, obj.timeRequired)
+                    .setSpanBetweenTokens("-", errorStatusSpan)
         }
     }
 
@@ -749,9 +750,8 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      * ForegroundColorSpan(0xFFFF0000));` will return a CharSequence `"Hello world!"` with `world` in red.
      *
      */
-    private fun setSpanBetweenTokens(text: CharSequence, token: String,
-                                     vararg cs: CharacterStyle): CharSequence {
-        var text = text
+    private fun CharSequence.setSpanBetweenTokens(token: String, vararg cs: CharacterStyle): CharSequence {
+        var text = this
         // Start and end refer to the points where the span will apply.
         val tokenLen = token.length
         val start = text.toString().indexOf(token) + tokenLen
