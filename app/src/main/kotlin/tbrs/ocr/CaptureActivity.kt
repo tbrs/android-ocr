@@ -727,11 +727,8 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         status_view_top.text = ""
 
         if (CONTINUOUS_DISPLAY_METADATA) {
-            // Color text delimited by '-' as red.
             status_view_bottom.textSize = 14f
-            val cs = setSpanBetweenTokens("OCR: " + sourceLanguageReadable + " - OCR failed - Time required: "
-                    + obj.timeRequired + " ms", "-", ForegroundColorSpan(-0x10000))
-            status_view_bottom.text = cs
+            status_view_bottom.text = setSpanBetweenTokens(getString(R.string.continuous_decode_status, sourceLanguageReadable, obj.timeRequired), "-", ForegroundColorSpan(-0x10000))
         }
     }
 

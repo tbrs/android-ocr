@@ -29,4 +29,6 @@
     <string name="dialog_error_camera_message">Could not initialize camera. Please try restarting application or device.</string>
 
     <string name="dialog_error_button_positive">OK</string>
+
+    <string name="continuous_decode_status">OCR: %1$s - OCR failed - Time required: %2$d ms"</string>
 </resources>
