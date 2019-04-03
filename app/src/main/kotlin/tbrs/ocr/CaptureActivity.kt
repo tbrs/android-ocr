@@ -963,8 +963,8 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         }
 
         // Retrieve from preferences, and set in this Activity, the character blacklist and whitelist.
-        characterBlacklist = OcrCharacterHelper.getBlacklist(prefs!!, sourceLanguageCodeOcr!!)
-        characterWhitelist = OcrCharacterHelper.getWhitelist(prefs!!, sourceLanguageCodeOcr!!)
+        characterBlacklist = OcrCharacterHelper.getBlacklist(prefs!!, sourceLanguageCodeOcr)
+        characterWhitelist = OcrCharacterHelper.getWhitelist(prefs!!, sourceLanguageCodeOcr)
 
         prefs!!.registerOnSharedPreferenceChangeListener(listener)
 
