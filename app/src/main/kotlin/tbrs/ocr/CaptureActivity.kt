@@ -103,7 +103,6 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     // Whether we are doing OCR in continuous mode.
     private var isContinuousModeActive: Boolean = false
     private var prefs: SharedPreferences? = null
-    private val listener: OnSharedPreferenceChangeListener? = null
     // For initOcr - language download & unzip.
     private var dialog: ProgressDialog? = null
     // Also for initOcr - init OCR engine.
@@ -965,8 +964,6 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         // Retrieve from preferences, and set in this Activity, the character blacklist and whitelist.
         characterBlacklist = OcrCharacterHelper.getBlacklist(prefs!!, sourceLanguageCodeOcr)
         characterWhitelist = OcrCharacterHelper.getWhitelist(prefs!!, sourceLanguageCodeOcr)
-
-        prefs!!.registerOnSharedPreferenceChangeListener(listener)
 
         beepManager!!.updatePrefs()
     }
