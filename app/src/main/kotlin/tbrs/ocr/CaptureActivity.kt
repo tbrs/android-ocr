@@ -170,8 +170,6 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         // Call before everything else.
         checkFirstLaunch()
 
-        if (firstLaunch) writeDefaultPreferences()
-
         val window = window
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS)
@@ -870,36 +868,30 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      * run. The easiest way to do this is to check android:versionCode from the manifest, and compare
      * it to a value stored as a preference.
      */
-    private fun checkFirstLaunch(): Boolean {
-        try {
-            val info = packageManager.getPackageInfo(packageName, 0)
-            val currentVersion = info.versionCode
-            val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-            val lastVersion = prefs.getInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, 0)
-            if (lastVersion == 0) {
-                firstLaunch = true
-            } else {
-                firstLaunch = false
-            }
-            if (currentVersion > lastVersion) {
-                // Record the last version for which we last displayed the What's New (Help) page.
-                prefs.edit {
-                    putInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, currentVersion)
-                }
-                val intent = Intent(this, HelpActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET)
+    private fun checkFirstLaunch(): Boolean = try {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val lastVersion = prefs.getInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, 0)
+        val cleanInstall = lastVersion == 0
 
-                // Show the default page on a clean install, and the what's new page on an upgrade.
-                val page = if (lastVersion == 0) HelpActivity.DEFAULT_PAGE else HelpActivity.WHATS_NEW_PAGE
-                intent.putExtra(HelpActivity.REQUESTED_PAGE_KEY, page)
-                startActivity(intent)
-                return true
+        if (cleanInstall) writeDefaultPreferences()
+
+        val currentVersion = packageManager.getPackageInfo(packageName, 0).versionCode
+        (currentVersion > lastVersion).also { upgraded ->
+            if (!upgraded) return@also
+
+            // Record the last version for which we last displayed the What's New (Help) page.
+            prefs.edit { putInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, currentVersion) }
+
+            // Show the default page on a clean install, and the what's new page on an upgrade.
+            with(Intent(this, HelpActivity::class.java)) {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET)
+                putExtra(HelpActivity.REQUESTED_PAGE_KEY, if (cleanInstall) HelpActivity.DEFAULT_PAGE else HelpActivity.WHATS_NEW_PAGE)
+                startActivity(this)
             }
-        } catch (e: PackageManager.NameNotFoundException) {
-            Log.w(TAG, e)
         }
-
-        return false
+    } catch (e: PackageManager.NameNotFoundException) {
+        Log.w(TAG, e)
+        false
     }
 
     /**
@@ -1092,9 +1084,6 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         private val OPTIONS_COPY_TRANSLATED_TEXT_ID = Menu.FIRST + 1
         private val OPTIONS_SHARE_RECOGNIZED_TEXT_ID = Menu.FIRST + 2
         private val OPTIONS_SHARE_TRANSLATED_TEXT_ID = Menu.FIRST + 3
-        // True if this is the first time the app is being run.
-        internal var firstLaunch: Boolean = false
-            private set
 
         private const val PERMISSION_REQUEST_CAMERA = 42
     }
