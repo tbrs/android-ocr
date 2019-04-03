@@ -925,25 +925,20 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
         // Retrieve from preferences, and set in this Activity, the page segmentation mode preference.
         val pageSegmentationModes = resources.getStringArray(R.array.pagesegmentationmodes)
-        val pageSegmentationModeName = prefs!!.getString(PreferencesActivity.KEY_PAGE_SEGMENTATION_MODE, pageSegmentationModes[0])
-        if (pageSegmentationModeName == pageSegmentationModes[0]) {
-            pageSegmentationMode = TessBaseAPI.PageSegMode.PSM_AUTO_OSD
-        } else if (pageSegmentationModeName == pageSegmentationModes[1]) {
-            pageSegmentationMode = TessBaseAPI.PageSegMode.PSM_AUTO
-        } else if (pageSegmentationModeName == pageSegmentationModes[2]) {
-            pageSegmentationMode = TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK
-        } else if (pageSegmentationModeName == pageSegmentationModes[3]) {
-            pageSegmentationMode = TessBaseAPI.PageSegMode.PSM_SINGLE_CHAR
-        } else if (pageSegmentationModeName == pageSegmentationModes[4]) {
-            pageSegmentationMode = TessBaseAPI.PageSegMode.PSM_SINGLE_COLUMN
-        } else if (pageSegmentationModeName == pageSegmentationModes[5]) {
-            pageSegmentationMode = TessBaseAPI.PageSegMode.PSM_SINGLE_LINE
-        } else if (pageSegmentationModeName == pageSegmentationModes[6]) {
-            pageSegmentationMode = TessBaseAPI.PageSegMode.PSM_SINGLE_WORD
-        } else if (pageSegmentationModeName == pageSegmentationModes[7]) {
-            pageSegmentationMode = TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK_VERT_TEXT
-        } else if (pageSegmentationModeName == pageSegmentationModes[8]) {
-            pageSegmentationMode = TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT
+        pageSegmentationMode = if (pageSegmentationModes.size != 9) {
+            Log.e(TAG, "Incorrect resource for page segmentation modes")
+            TessBaseAPI.PageSegMode.PSM_AUTO
+        } else when (prefs!!.getString(PreferencesActivity.KEY_PAGE_SEGMENTATION_MODE, pageSegmentationModes[0])) {
+            pageSegmentationModes[0] -> TessBaseAPI.PageSegMode.PSM_AUTO_OSD
+            pageSegmentationModes[1] -> TessBaseAPI.PageSegMode.PSM_AUTO
+            pageSegmentationModes[2] -> TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK
+            pageSegmentationModes[3] -> TessBaseAPI.PageSegMode.PSM_SINGLE_CHAR
+            pageSegmentationModes[4] -> TessBaseAPI.PageSegMode.PSM_SINGLE_COLUMN
+            pageSegmentationModes[5] -> TessBaseAPI.PageSegMode.PSM_SINGLE_LINE
+            pageSegmentationModes[6] -> TessBaseAPI.PageSegMode.PSM_SINGLE_WORD
+            pageSegmentationModes[7] -> TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK_VERT_TEXT
+            pageSegmentationModes[8] -> TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT
+            else -> TessBaseAPI.PageSegMode.PSM_AUTO
         }
 
         // Retrieve from preferences, and set in this Activity, the OCR engine mode.
