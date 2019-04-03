@@ -24,8 +24,6 @@ import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -102,7 +100,6 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     private var isTranslationActive: Boolean = false
     // Whether we are doing OCR in continuous mode.
     private var isContinuousModeActive: Boolean = false
-    private var prefs: SharedPreferences? = null
     // For initOcr - language download & unzip.
     private var dialog: ProgressDialog? = null
     // Also for initOcr - init OCR engine.
@@ -169,14 +166,11 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
     internal fun getHandler(): Handler? = handler
 
-    public override fun onCreate(icicle: Bundle?) {
-        super.onCreate(icicle)
-
+    public override fun onCreate(savedInstanceState: Bundle?) = super.onCreate(savedInstanceState).also {
+        // Call before everything else.
         checkFirstLaunch()
 
-        if (firstLaunch) {
-            setDefaultPreferences()
-        }
+        if (firstLaunch) writeDefaultPreferences()
 
         val window = window
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -288,7 +282,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         val previousSourceLanguageCodeOcr = sourceLanguageCodeOcr
         val previousOcrEngineMode = ocrEngineMode
 
-        retrievePreferences()
+        readPreferences()
 
         // Set up the camera preview surface.
         surfaceHolder = preview_view.holder
@@ -911,24 +905,22 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     /**
      * Gets values from shared preferences and sets the corresponding data members in this activity.
      */
-    private fun retrievePreferences() {
-        prefs = PreferenceManager.getDefaultSharedPreferences(this)
-
+    private fun readPreferences() = with(PreferenceManager.getDefaultSharedPreferences(this)) {
         // Retrieve from preferences, and set in this Activity, the language preferences.
-        PreferenceManager.setDefaultValues(this, R.xml.preferences, false)
-        setSourceLanguage(prefs!!.getString(PreferencesActivity.KEY_SOURCE_LANGUAGE_PREFERENCE, DEFAULT_SOURCE_LANGUAGE_CODE))
-        setTargetLanguage(prefs!!.getString(PreferencesActivity.KEY_TARGET_LANGUAGE_PREFERENCE, DEFAULT_TARGET_LANGUAGE_CODE))
-        isTranslationActive = prefs!!.getBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, false)
+        PreferenceManager.setDefaultValues(this@CaptureActivity, R.xml.preferences, false)
+        setSourceLanguage(getString(PreferencesActivity.KEY_SOURCE_LANGUAGE_PREFERENCE, DEFAULT_SOURCE_LANGUAGE_CODE))
+        setTargetLanguage(getString(PreferencesActivity.KEY_TARGET_LANGUAGE_PREFERENCE, DEFAULT_TARGET_LANGUAGE_CODE))
+        isTranslationActive = getBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, false)
 
         // Retrieve from preferences, and set in this Activity, the capture mode preference.
-        isContinuousModeActive = prefs!!.getBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, DEFAULT_TOGGLE_CONTINUOUS)
+        isContinuousModeActive = getBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, DEFAULT_TOGGLE_CONTINUOUS)
 
         // Retrieve from preferences, and set in this Activity, the page segmentation mode preference.
         val pageSegmentationModes = resources.getStringArray(R.array.pagesegmentationmodes)
         pageSegmentationMode = if (pageSegmentationModes.size != 9) {
             Log.e(TAG, "Incorrect resource for page segmentation modes")
             TessBaseAPI.PageSegMode.PSM_AUTO
-        } else when (prefs!!.getString(PreferencesActivity.KEY_PAGE_SEGMENTATION_MODE, pageSegmentationModes[0])) {
+        } else when (getString(PreferencesActivity.KEY_PAGE_SEGMENTATION_MODE, pageSegmentationModes[0])) {
             pageSegmentationModes[0] -> TessBaseAPI.PageSegMode.PSM_AUTO_OSD
             pageSegmentationModes[1] -> TessBaseAPI.PageSegMode.PSM_AUTO
             pageSegmentationModes[2] -> TessBaseAPI.PageSegMode.PSM_SINGLE_BLOCK
@@ -943,7 +935,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
         // Retrieve from preferences, and set in this Activity, the OCR engine mode.
         val ocrEngineModes = resources.getStringArray(R.array.ocrenginemodes)
-        val ocrEngineModeName = prefs!!.getString(PreferencesActivity.KEY_OCR_ENGINE_MODE, ocrEngineModes[0])
+        val ocrEngineModeName = getString(PreferencesActivity.KEY_OCR_ENGINE_MODE, ocrEngineModes[0])
         if (ocrEngineModeName == ocrEngineModes[0]) {
             ocrEngineMode = TessBaseAPI.OEM_TESSERACT_ONLY
         } else if (ocrEngineModeName == ocrEngineModes[1]) {
@@ -953,33 +945,31 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         }
 
         // Retrieve from preferences, and set in this Activity, the character blacklist and whitelist.
-        characterBlacklist = OcrCharacterHelper.getBlacklist(prefs!!, sourceLanguageCodeOcr)
-        characterWhitelist = OcrCharacterHelper.getWhitelist(prefs!!, sourceLanguageCodeOcr)
+        characterBlacklist = OcrCharacterHelper.getBlacklist(this, sourceLanguageCodeOcr)
+        characterWhitelist = OcrCharacterHelper.getWhitelist(this, sourceLanguageCodeOcr)
 
         beepManager!!.updatePrefs()
     }
 
     /**
-     * Sets default values for preferences. To be called the first time this app is run.
+     * Sets default values for preferences.
+     * To be called after fresh install.
      */
-    private fun setDefaultPreferences() = with(PreferenceManager.getDefaultSharedPreferences(this)) {
-        prefs = this
-        edit {
-            putBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, DEFAULT_TOGGLE_CONTINUOUS)
-            putString(PreferencesActivity.KEY_SOURCE_LANGUAGE_PREFERENCE, DEFAULT_SOURCE_LANGUAGE_CODE)
-            putBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, DEFAULT_TOGGLE_TRANSLATION)
-            putString(PreferencesActivity.KEY_TARGET_LANGUAGE_PREFERENCE, DEFAULT_TARGET_LANGUAGE_CODE)
-            putString(PreferencesActivity.KEY_TRANSLATOR, DEFAULT_TRANSLATOR)
-            putString(PreferencesActivity.KEY_OCR_ENGINE_MODE, DEFAULT_OCR_ENGINE_MODE)
-            putBoolean(PreferencesActivity.KEY_AUTO_FOCUS, DEFAULT_TOGGLE_AUTO_FOCUS)
-            putBoolean(PreferencesActivity.KEY_DISABLE_CONTINUOUS_FOCUS, DEFAULT_DISABLE_CONTINUOUS_FOCUS)
-            putBoolean(PreferencesActivity.KEY_PLAY_BEEP, DEFAULT_TOGGLE_BEEP)
-            putString(PreferencesActivity.KEY_CHARACTER_BLACKLIST, OcrCharacterHelper.getDefaultBlacklist(DEFAULT_SOURCE_LANGUAGE_CODE))
-            putString(PreferencesActivity.KEY_CHARACTER_WHITELIST, OcrCharacterHelper.getDefaultWhitelist(DEFAULT_SOURCE_LANGUAGE_CODE))
-            putString(PreferencesActivity.KEY_PAGE_SEGMENTATION_MODE, DEFAULT_PAGE_SEGMENTATION_MODE)
-            putBoolean(PreferencesActivity.KEY_REVERSE_IMAGE, DEFAULT_TOGGLE_REVERSED_IMAGE)
-            putBoolean(PreferencesActivity.KEY_TOGGLE_LIGHT, DEFAULT_TOGGLE_LIGHT)
-        }
+    private fun writeDefaultPreferences() = PreferenceManager.getDefaultSharedPreferences(this).edit {
+        putBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, DEFAULT_TOGGLE_CONTINUOUS)
+        putString(PreferencesActivity.KEY_SOURCE_LANGUAGE_PREFERENCE, DEFAULT_SOURCE_LANGUAGE_CODE)
+        putBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, DEFAULT_TOGGLE_TRANSLATION)
+        putString(PreferencesActivity.KEY_TARGET_LANGUAGE_PREFERENCE, DEFAULT_TARGET_LANGUAGE_CODE)
+        putString(PreferencesActivity.KEY_TRANSLATOR, DEFAULT_TRANSLATOR)
+        putString(PreferencesActivity.KEY_OCR_ENGINE_MODE, DEFAULT_OCR_ENGINE_MODE)
+        putBoolean(PreferencesActivity.KEY_AUTO_FOCUS, DEFAULT_TOGGLE_AUTO_FOCUS)
+        putBoolean(PreferencesActivity.KEY_DISABLE_CONTINUOUS_FOCUS, DEFAULT_DISABLE_CONTINUOUS_FOCUS)
+        putBoolean(PreferencesActivity.KEY_PLAY_BEEP, DEFAULT_TOGGLE_BEEP)
+        putString(PreferencesActivity.KEY_CHARACTER_BLACKLIST, OcrCharacterHelper.getDefaultBlacklist(DEFAULT_SOURCE_LANGUAGE_CODE))
+        putString(PreferencesActivity.KEY_CHARACTER_WHITELIST, OcrCharacterHelper.getDefaultWhitelist(DEFAULT_SOURCE_LANGUAGE_CODE))
+        putString(PreferencesActivity.KEY_PAGE_SEGMENTATION_MODE, DEFAULT_PAGE_SEGMENTATION_MODE)
+        putBoolean(PreferencesActivity.KEY_REVERSE_IMAGE, DEFAULT_TOGGLE_REVERSED_IMAGE)
+        putBoolean(PreferencesActivity.KEY_TOGGLE_LIGHT, DEFAULT_TOGGLE_LIGHT)
     }
 
     internal fun displayProgressDialog() {
