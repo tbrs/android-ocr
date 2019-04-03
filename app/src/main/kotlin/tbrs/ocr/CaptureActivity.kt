@@ -921,11 +921,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         isTranslationActive = prefs!!.getBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, false)
 
         // Retrieve from preferences, and set in this Activity, the capture mode preference.
-        if (prefs!!.getBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, DEFAULT_TOGGLE_CONTINUOUS)) {
-            isContinuousModeActive = true
-        } else {
-            isContinuousModeActive = false
-        }
+        isContinuousModeActive = prefs!!.getBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, DEFAULT_TOGGLE_CONTINUOUS)
 
         // Retrieve from preferences, and set in this Activity, the page segmentation mode preference.
         val pageSegmentationModes = resources.getStringArray(R.array.pagesegmentationmodes)
