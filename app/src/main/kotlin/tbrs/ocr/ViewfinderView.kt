@@ -28,6 +28,7 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.View
+import androidx.annotation.ColorInt
 import tbrs.ocr.camera.CameraManager
 
 /**
@@ -37,12 +38,8 @@ import tbrs.ocr.camera.CameraManager
  * The code for this class was adapted from the ZXing project: http://code.google.com/p/zxing
  */
 // This constructor is used when the class is built from an XML resource.
-class ViewfinderView (context: Context, attrs: AttributeSet) : View(context, attrs) {
+class ViewfinderView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private var cameraManager: CameraManager? = null
-    private val paint: Paint
-    private val maskColor: Int
-    private val frameColor: Int
-    private val cornerColor: Int
     /** Setting it to null removes text on next drawing pass. */
     var resultText: OcrResultText? = null
     private var words: Array<String>? = null
@@ -50,21 +47,18 @@ class ViewfinderView (context: Context, attrs: AttributeSet) : View(context, att
     private var textlineBoundingBoxes: List<Rect>? = null
     private var stripBoundingBoxes: List<Rect>? = null
     private var wordBoundingBoxes: List<Rect>? = null
-    //  Rect bounds;
+
+    // Fields extracted to avoid allocations in onDraw().
+    // Rect bounds;
     private var previewFrame: Rect? = null
-    private var rect: Rect? = null
-
-    init {
-        // Initialize these once for performance rather than calling them every time in onDraw().
-        paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        val resources = resources
-        maskColor = resources.getColor(R.color.viewfinder_mask)
-        frameColor = resources.getColor(R.color.viewfinder_frame)
-        cornerColor = resources.getColor(R.color.viewfinder_corners)
-
-        previewFrame = Rect()
-        rect = Rect()
-    }
+    private var rect: Rect = Rect()
+    private val paint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    @ColorInt
+    private val maskColor: Int = resources.getColor(R.color.viewfinder_mask)
+    @ColorInt
+    private val frameColor: Int = resources.getColor(R.color.viewfinder_frame)
+    @ColorInt
+    private val cornerColor: Int = resources.getColor(R.color.viewfinder_corners)
 
     fun setCameraManager(cameraManager: CameraManager) {
         this.cameraManager = cameraManager
