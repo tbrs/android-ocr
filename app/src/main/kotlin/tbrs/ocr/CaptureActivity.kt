@@ -220,35 +220,35 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
                                 if ((currentX >= rect!!.left - BIG_BUFFER && currentX <= rect.left + BIG_BUFFER || lastX >= rect.left - BIG_BUFFER && lastX <= rect.left + BIG_BUFFER) && (currentY <= rect.top + BIG_BUFFER && currentY >= rect.top - BIG_BUFFER || lastY <= rect.top + BIG_BUFFER && lastY >= rect.top - BIG_BUFFER)) {
                                     // Top left corner: adjust both top and left sides.
                                     cameraManager!!.adjustFramingRect(2 * (lastX - currentX), 2 * (lastY - currentY))
-                                    viewfinder_view.removeResultText()
+                                    viewfinder_view.resultText = null
                                 } else if ((currentX >= rect.right - BIG_BUFFER && currentX <= rect.right + BIG_BUFFER || lastX >= rect.right - BIG_BUFFER && lastX <= rect.right + BIG_BUFFER) && (currentY <= rect.top + BIG_BUFFER && currentY >= rect.top - BIG_BUFFER || lastY <= rect.top + BIG_BUFFER && lastY >= rect.top - BIG_BUFFER)) {
                                     // Top right corner: adjust both top and right sides.
                                     cameraManager!!.adjustFramingRect(2 * (currentX - lastX), 2 * (lastY - currentY))
-                                    viewfinder_view.removeResultText()
+                                    viewfinder_view.resultText = null
                                 } else if ((currentX >= rect.left - BIG_BUFFER && currentX <= rect.left + BIG_BUFFER || lastX >= rect.left - BIG_BUFFER && lastX <= rect.left + BIG_BUFFER) && (currentY <= rect.bottom + BIG_BUFFER && currentY >= rect.bottom - BIG_BUFFER || lastY <= rect.bottom + BIG_BUFFER && lastY >= rect.bottom - BIG_BUFFER)) {
                                     // Bottom left corner: adjust both bottom and left sides.
                                     cameraManager!!.adjustFramingRect(2 * (lastX - currentX), 2 * (currentY - lastY))
-                                    viewfinder_view.removeResultText()
+                                    viewfinder_view.resultText = null
                                 } else if ((currentX >= rect.right - BIG_BUFFER && currentX <= rect.right + BIG_BUFFER || lastX >= rect.right - BIG_BUFFER && lastX <= rect.right + BIG_BUFFER) && (currentY <= rect.bottom + BIG_BUFFER && currentY >= rect.bottom - BIG_BUFFER || lastY <= rect.bottom + BIG_BUFFER && lastY >= rect.bottom - BIG_BUFFER)) {
                                     // Bottom right corner: adjust both bottom and right sides.
                                     cameraManager!!.adjustFramingRect(2 * (currentX - lastX), 2 * (currentY - lastY))
-                                    viewfinder_view.removeResultText()
+                                    viewfinder_view.resultText = null
                                 } else if ((currentX >= rect.left - BUFFER && currentX <= rect.left + BUFFER || lastX >= rect.left - BUFFER && lastX <= rect.left + BUFFER) && (currentY <= rect.bottom && currentY >= rect.top || lastY <= rect.bottom && lastY >= rect.top)) {
                                     // Adjusting left side: event falls within BUFFER pixels of left side, and between top and bottom side limits.
                                     cameraManager!!.adjustFramingRect(2 * (lastX - currentX), 0)
-                                    viewfinder_view.removeResultText()
+                                    viewfinder_view.resultText = null
                                 } else if ((currentX >= rect.right - BUFFER && currentX <= rect.right + BUFFER || lastX >= rect.right - BUFFER && lastX <= rect.right + BUFFER) && (currentY <= rect.bottom && currentY >= rect.top || lastY <= rect.bottom && lastY >= rect.top)) {
                                     // Adjusting right side: event falls within BUFFER pixels of right side, and between top and bottom side limits.
                                     cameraManager!!.adjustFramingRect(2 * (currentX - lastX), 0)
-                                    viewfinder_view.removeResultText()
+                                    viewfinder_view.resultText = null
                                 } else if ((currentY <= rect.top + BUFFER && currentY >= rect.top - BUFFER || lastY <= rect.top + BUFFER && lastY >= rect.top - BUFFER) && (currentX <= rect.right && currentX >= rect.left || lastX <= rect.right && lastX >= rect.left)) {
                                     // Adjusting top side: event falls within BUFFER pixels of top side, and between left and right side limits.
                                     cameraManager!!.adjustFramingRect(0, 2 * (lastY - currentY))
-                                    viewfinder_view.removeResultText()
+                                    viewfinder_view.resultText = null
                                 } else if ((currentY <= rect.bottom + BUFFER && currentY >= rect.bottom - BUFFER || lastY <= rect.bottom + BUFFER && lastY >= rect.bottom - BUFFER) && (currentX <= rect.right && currentX >= rect.left || lastX <= rect.right && lastX >= rect.left)) {
                                     // Adjusting bottom side: event falls within BUFFER pixels of bottom side, and between left and right side limits.
                                     cameraManager!!.adjustFramingRect(0, 2 * (currentY - lastY))
-                                    viewfinder_view.removeResultText()
+                                    viewfinder_view.resultText = null
                                 }
                             }
                         } catch (e: NullPointerException) {
@@ -675,15 +675,13 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         // Send an OcrResultText object to the ViewfinderView for text rendering.
         // TODO(tbrs): nullability stubbed with .orEmpty. Do something about it.
         val ocrResultText = ocrResult.text.orEmpty()
-        viewfinder_view.addResultText(OcrResultText(ocrResultText.orEmpty(),
-                ocrResult.wordConfidences!!,
-                ocrResult.meanConfidence,
+        viewfinder_view.resultText = OcrResultText(ocrResultText,
+                ocrResult.wordConfidences?.asList().orEmpty(),
                 ocrResult.bitmapDimensions,
                 ocrResult.regionBoundingBoxes.orEmpty(),
                 ocrResult.textlineBoundingBoxes.orEmpty(),
                 ocrResult.stripBoundingBoxes.orEmpty(),
-                ocrResult.wordBoundingBoxes.orEmpty(),
-                ocrResult.characterBoundingBoxes.orEmpty()))
+                ocrResult.wordBoundingBoxes.orEmpty())
 
         val meanConfidence = ocrResult.meanConfidence
 
@@ -715,7 +713,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      */
     internal fun handleOcrContinuousDecode(obj: OcrResultFailure) {
         lastResult = null
-        viewfinder_view.removeResultText()
+        viewfinder_view.resultText = null
 
         // Reset the text in the recognized text box.
         status_view_top.text = ""
@@ -799,7 +797,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         camera_button_view.visibility = View.VISIBLE
         if (DISPLAY_SHUTTER_BUTTON) shutter_button.visibility = View.VISIBLE
         lastResult = null
-        viewfinder_view.removeResultText()
+        viewfinder_view.resultText = null
     }
 
     /** Displays a pop-up message showing the name of the current OCR source language.  */
@@ -814,7 +812,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
      * completed after starting realtime OCR.
      */
     internal fun setStatusViewForContinuous() {
-        viewfinder_view.removeResultText()
+        viewfinder_view.resultText = null
         if (CONTINUOUS_DISPLAY_METADATA) {
             status_view_bottom.text = "OCR: $sourceLanguageReadable - waiting for OCR..."
         }
