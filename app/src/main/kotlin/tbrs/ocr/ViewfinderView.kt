@@ -50,8 +50,8 @@ class ViewfinderView(context: Context, attrs: AttributeSet) : View(context, attr
 
     // Fields extracted to avoid allocations in onDraw().
     // Rect bounds;
-    private var previewFrame: Rect? = null
     private var rect: Rect = Rect()
+    private var bounds: Rect = Rect()
     private val paint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
     @ColorInt
     private val maskColor: Int = resources.getColor(R.color.viewfinder_mask)
@@ -60,12 +60,12 @@ class ViewfinderView(context: Context, attrs: AttributeSet) : View(context, attr
     @ColorInt
     private val cornerColor: Int = resources.getColor(R.color.viewfinder_corners)
 
-    fun setCameraManager(cameraManager: CameraManager) {
-        this.cameraManager = cameraManager
+    fun setCameraManager(manager: CameraManager) {
+        cameraManager = manager
     }
 
     public override fun onDraw(canvas: Canvas) {
-        val frame = cameraManager!!.framingRect ?: return
+        val frame = cameraManager?.framingRect ?: return
         val width = canvas.width
         val height = canvas.height
 
@@ -80,10 +80,10 @@ class ViewfinderView(context: Context, attrs: AttributeSet) : View(context, attr
         if (resultText != null) {
             // Only draw text/bounding boxes on viewfinder if it hasn't been resized since the OCR was requested.
             val bitmapSize = resultText!!.bitmapDimensions
-            previewFrame = cameraManager!!.getFramingRectInPreview()
-            if (bitmapSize.x == previewFrame!!.width() && bitmapSize.y == previewFrame!!.height()) {
-                val scaleX = frame.width() / previewFrame!!.width().toFloat()
-                val scaleY = frame.height() / previewFrame!!.height().toFloat()
+            val previewFrame = cameraManager?.getFramingRectInPreview()
+            if (bitmapSize.x == previewFrame!!.width() && bitmapSize.y == previewFrame.height()) {
+                val scaleX = frame.width() / previewFrame.width().toFloat()
+                val scaleY = frame.height() / previewFrame.height().toFloat()
 
                 if (DRAW_REGION_BOXES) {
                     regionBoundingBoxes = resultText!!.regionBoundingBoxes
@@ -190,7 +190,6 @@ class ViewfinderView(context: Context, attrs: AttributeSet) : View(context, attr
                             paint.textSize = 100f
                             paint.textScaleX = 1.0f
                             // ask the paint for the bounding rect if it were to draw this text
-                            val bounds = Rect()
                             paint.getTextBounds(words!![i], 0, words!![i].length, bounds)
                             // get the height that would have been produced
                             val h = bounds.bottom - bounds.top
