@@ -22,7 +22,7 @@ import android.graphics.Rect
 /**
  * Encapsulates text and its character/word coordinates resulting from OCR.
  */
-class OcrResultText(val text: String,
+data class OcrResultText(val text: String,
                     val wordConfidences: IntArray,
                     val bitmapDimensions: Point,
                     val regionBoundingBoxes: List<Rect>,
