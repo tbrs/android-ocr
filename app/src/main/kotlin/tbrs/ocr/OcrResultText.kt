@@ -1,5 +1,6 @@
 /*
  * Copyright 2011 Robert Theis
+ * Copyright 2019 tbrs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +24,8 @@ import android.graphics.Rect
  */
 class OcrResultText(val text: String,
                     val wordConfidences: IntArray,
-                    val meanConfidence: Int,
                     val bitmapDimensions: Point,
                     val regionBoundingBoxes: List<Rect>,
                     val textlineBoundingBoxes: List<Rect>,
                     val stripBoundingBoxes: List<Rect>,
-                    val wordBoundingBoxes: List<Rect>,
-                    val characterBoundingBoxes: List<Rect>) {
-
-    override fun toString(): String {
-        return "$text $meanConfidence"
-    }
-}
+                    val wordBoundingBoxes: List<Rect>)

@@ -677,13 +677,11 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         val ocrResultText = ocrResult.text.orEmpty()
         viewfinder_view.addResultText(OcrResultText(ocrResultText.orEmpty(),
                 ocrResult.wordConfidences!!,
-                ocrResult.meanConfidence,
                 ocrResult.bitmapDimensions,
                 ocrResult.regionBoundingBoxes.orEmpty(),
                 ocrResult.textlineBoundingBoxes.orEmpty(),
                 ocrResult.stripBoundingBoxes.orEmpty(),
-                ocrResult.wordBoundingBoxes.orEmpty(),
-                ocrResult.characterBoundingBoxes.orEmpty()))
+                ocrResult.wordBoundingBoxes.orEmpty()))
 
         val meanConfidence = ocrResult.meanConfidence
 
