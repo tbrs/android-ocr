@@ -16,18 +16,17 @@
  */
 package tbrs.ocr
 
-import tbrs.ocr.R
-import tbrs.ocr.camera.CameraManager
-
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Paint.Align
-import android.graphics.Rect
 import android.graphics.Paint.Style
+import android.graphics.Point
+import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.View
+import tbrs.ocr.camera.CameraManager
 
 /**
  * This view is overlaid on top of the camera preview. It adds the viewfinder rectangle and partial
@@ -386,3 +385,14 @@ class ViewfinderView// This constructor is used when the class is built from an 
         internal val DRAW_CHARACTER_TEXT = false
     }
 }
+
+/**
+ * Encapsulates text and its character/word coordinates resulting from OCR.
+ */
+data class OcrResultText(val text: String,
+                         val wordConfidences: IntArray,
+                         val bitmapDimensions: Point,
+                         val regionBoundingBoxes: List<Rect>,
+                         val textlineBoundingBoxes: List<Rect>,
+                         val stripBoundingBoxes: List<Rect>,
+                         val wordBoundingBoxes: List<Rect>)

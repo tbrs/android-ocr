@@ -675,7 +675,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
         // Send an OcrResultText object to the ViewfinderView for text rendering.
         // TODO(tbrs): nullability stubbed with .orEmpty. Do something about it.
         val ocrResultText = ocrResult.text.orEmpty()
-        viewfinder_view.addResultText(OcrResultText(ocrResultText.orEmpty(),
+        viewfinder_view.addResultText(OcrResultText(ocrResultText,
                 ocrResult.wordConfidences!!,
                 ocrResult.bitmapDimensions,
                 ocrResult.regionBoundingBoxes.orEmpty(),
