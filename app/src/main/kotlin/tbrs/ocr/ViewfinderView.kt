@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008 ZXing authors
  * Copyright 2011 Robert Theis
+ * Copyright 2019 tbrs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package tbrs.ocr
 
 import android.content.Context
@@ -34,9 +36,8 @@ import tbrs.ocr.camera.CameraManager
  *
  * The code for this class was adapted from the ZXing project: http://code.google.com/p/zxing
  */
-class ViewfinderView// This constructor is used when the class is built from an XML resource.
-(context: Context, attrs: AttributeSet) : View(context, attrs) {
-
+// This constructor is used when the class is built from an XML resource.
+class ViewfinderView (context: Context, attrs: AttributeSet) : View(context, attrs) {
     private var cameraManager: CameraManager? = null
     private val paint: Paint
     private val maskColor: Int
@@ -48,13 +49,11 @@ class ViewfinderView// This constructor is used when the class is built from an 
     private var textlineBoundingBoxes: List<Rect>? = null
     private var stripBoundingBoxes: List<Rect>? = null
     private var wordBoundingBoxes: List<Rect>? = null
-    private val characterBoundingBoxes: List<Rect>? = null
     //  Rect bounds;
     private var previewFrame: Rect? = null
     private var rect: Rect? = null
 
     init {
-
         // Initialize these once for performance rather than calling them every time in onDraw().
         paint = Paint(Paint.ANTI_ALIAS_FLAG)
         val resources = resources
@@ -62,7 +61,6 @@ class ViewfinderView// This constructor is used when the class is built from an 
         frameColor = resources.getColor(R.color.viewfinder_frame)
         cornerColor = resources.getColor(R.color.viewfinder_corners)
 
-        //    bounds = new Rect();
         previewFrame = Rect()
         rect = Rect()
     }
@@ -85,13 +83,10 @@ class ViewfinderView// This constructor is used when the class is built from an 
 
         // If we have an OCR result, overlay its information on the viewfinder.
         if (resultText != null) {
-
             // Only draw text/bounding boxes on viewfinder if it hasn't been resized since the OCR was requested.
             val bitmapSize = resultText!!.bitmapDimensions
             previewFrame = cameraManager!!.getFramingRectInPreview()
             if (bitmapSize.x == previewFrame!!.width() && bitmapSize.y == previewFrame!!.height()) {
-
-
                 val scaleX = frame.width() / previewFrame!!.width().toFloat()
                 val scaleY = frame.height() / previewFrame!!.height().toFloat()
 
@@ -141,15 +136,8 @@ class ViewfinderView// This constructor is used when the class is built from an 
                     }
                 }
 
-                if (DRAW_WORD_BOXES || DRAW_WORD_TEXT) {
-                    // Split the text into words
-                    wordBoundingBoxes = resultText!!.wordBoundingBoxes
-                    //      for (String w : words) {
-                    //        Log.e("ViewfinderView", "word: " + w);
-                    //      }
-                    //Log.d("ViewfinderView", "There are " + words.length + " words in the string array.");
-                    //Log.d("ViewfinderView", "There are " + wordBoundingBoxes.size() + " words with bounding boxes.");
-                }
+                // Split the text into words
+                if (DRAW_WORD_BOXES || DRAW_WORD_TEXT) wordBoundingBoxes = resultText!!.wordBoundingBoxes
 
                 if (DRAW_WORD_BOXES) {
                     paint.alpha = 0xFF
@@ -234,81 +222,6 @@ class ViewfinderView// This constructor is used when the class is built from an 
 
                     }
                 }
-
-                //        if (DRAW_CHARACTER_BOXES || DRAW_CHARACTER_TEXT) {
-                //          characterBoundingBoxes = resultText.getCharacterBoundingBoxes();
-                //        }
-                //
-                //        if (DRAW_CHARACTER_BOXES) {
-                //          // Draw bounding boxes around each character
-                //          paint.setAlpha(0xA0);
-                //          paint.setColor(0xFF00FF00);
-                //          paint.setStyle(Style.STROKE);
-                //          paint.setStrokeWidth(1);
-                //          for (int c = 0; c < characterBoundingBoxes.size(); c++) {
-                //            Rect characterRect = characterBoundingBoxes.get(c);
-                //            canvas.drawRect(frame.left + characterRect.left * scaleX,
-                //                frame.top + characterRect.top * scaleY,
-                //                frame.left + characterRect.right * scaleX,
-                //                frame.top + characterRect.bottom * scaleY, paint);
-                //          }
-                //        }
-                //
-                //        if (DRAW_CHARACTER_TEXT) {
-                //          // Draw letters individually
-                //          for (int i = 0; i < characterBoundingBoxes.size(); i++) {
-                //            Rect r = characterBoundingBoxes.get(i);
-                //
-                //            // Draw a white background for every letter
-                //            int meanConfidence = resultText.getMeanConfidence();
-                //            paint.setColor(Color.WHITE);
-                //            paint.setAlpha(meanConfidence * (255 / 100));
-                //            paint.setStyle(Style.FILL);
-                //            canvas.drawRect(frame.left + r.left * scaleX,
-                //                frame.top + r.top * scaleY,
-                //                frame.left + r.right * scaleX,
-                //                frame.top + r.bottom * scaleY, paint);
-                //
-                //            // Draw each letter, in black
-                //            paint.setColor(Color.BLACK);
-                //            paint.setAlpha(0xFF);
-                //            paint.setAntiAlias(true);
-                //            paint.setTextAlign(Align.LEFT);
-                //            String letter = "";
-                //            try {
-                //              char c = resultText.getText().replace("\n","").replace(" ", "").charAt(i);
-                //              letter = Character.toString(c);
-                //
-                //              if (!letter.equals("-") && !letter.equals("_")) {
-                //
-                //                // Adjust text size to fill rect
-                //                paint.setTextSize(100);
-                //                paint.setTextScaleX(1.0f);
-                //
-                //                // ask the paint for the bounding rect if it were to draw this text
-                //                Rect bounds = new Rect();
-                //                paint.getTextBounds(letter, 0, letter.length(), bounds);
-                //
-                //                // get the height that would have been produced
-                //                int h = bounds.bottom - bounds.top;
-                //
-                //                // figure out what textSize setting would create that height of text
-                //                float size  = (((float)(r.height())/h)*100f);
-                //
-                //                // and set it into the paint
-                //                paint.setTextSize(size);
-                //
-                //                // Draw the text as is. We don't really need to set the text scale, because the dimensions
-                //                // of the Rect should already be suited for drawing our letter.
-                //                canvas.drawText(letter, frame.left + r.left * scaleX, frame.top + r.bottom * scaleY, paint);
-                //              }
-                //            } catch (StringIndexOutOfBoundsException e) {
-                //              e.printStackTrace();
-                //            } catch (Exception e) {
-                //              e.printStackTrace();
-                //            }
-                //          }
-                //        }
             }
 
         }
@@ -331,15 +244,9 @@ class ViewfinderView// This constructor is used when the class is built from an 
         canvas.drawRect((frame.left - 15).toFloat(), (frame.bottom - 15).toFloat(), frame.left.toFloat(), frame.bottom.toFloat(), paint)
         canvas.drawRect((frame.right - 15).toFloat(), frame.bottom.toFloat(), (frame.right + 15).toFloat(), (frame.bottom + 15).toFloat(), paint)
         canvas.drawRect(frame.right.toFloat(), (frame.bottom - 15).toFloat(), (frame.right + 15).toFloat(), (frame.bottom + 15).toFloat(), paint)
-
-
-        // Request another update at the animation interval, but don't repaint the entire viewfinder mask.
-        //postInvalidateDelayed(ANIMATION_DELAY, frame.left, frame.top, frame.right, frame.bottom);
     }
 
-    fun drawViewfinder() {
-        invalidate()
-    }
+    fun drawViewfinder() = invalidate()
 
     /**
      * Adds the given OCR results for drawing to the view.
@@ -358,8 +265,6 @@ class ViewfinderView// This constructor is used when the class is built from an 
     }
 
     companion object {
-        //private static final long ANIMATION_DELAY = 80L;
-
         /** Flag to draw boxes representing the results from TessBaseAPI::GetRegions().  */
         internal val DRAW_REGION_BOXES = false
 
@@ -375,14 +280,8 @@ class ViewfinderView// This constructor is used when the class is built from an 
         /** Flag to draw word text with a background varying from transparent to opaque.  */
         internal val DRAW_TRANSPARENT_WORD_BACKGROUNDS = false
 
-        /** Flag to draw boxes representing the results from TessBaseAPI::GetCharacters().  */
-        internal val DRAW_CHARACTER_BOXES = false
-
         /** Flag to draw the text of words within their respective boxes from TessBaseAPI::GetWords().  */
         internal val DRAW_WORD_TEXT = false
-
-        /** Flag to draw each character in its respective box from TessBaseAPI::GetCharacters().  */
-        internal val DRAW_CHARACTER_TEXT = false
     }
 }
 
