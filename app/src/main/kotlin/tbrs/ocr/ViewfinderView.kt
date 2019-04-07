@@ -390,7 +390,7 @@ class ViewfinderView// This constructor is used when the class is built from an 
  * Encapsulates text and its character/word coordinates resulting from OCR.
  */
 data class OcrResultText(val text: String,
-                         val wordConfidences: IntArray,
+                         val wordConfidences: List<Int>,
                          val bitmapDimensions: Point,
                          val regionBoundingBoxes: List<Rect>,
                          val textlineBoundingBoxes: List<Rect>,
