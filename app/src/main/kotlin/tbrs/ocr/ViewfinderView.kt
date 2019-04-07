@@ -43,7 +43,8 @@ class ViewfinderView (context: Context, attrs: AttributeSet) : View(context, att
     private val maskColor: Int
     private val frameColor: Int
     private val cornerColor: Int
-    private var resultText: OcrResultText? = null
+    /** Setting it to null removes text on next drawing pass. */
+    var resultText: OcrResultText? = null
     private var words: Array<String>? = null
     private var regionBoundingBoxes: List<Rect>? = null
     private var textlineBoundingBoxes: List<Rect>? = null
@@ -247,22 +248,6 @@ class ViewfinderView (context: Context, attrs: AttributeSet) : View(context, att
     }
 
     fun drawViewfinder() = invalidate()
-
-    /**
-     * Adds the given OCR results for drawing to the view.
-     *
-     * @param text Object containing OCR-derived text and corresponding data.
-     */
-    fun addResultText(text: OcrResultText) {
-        resultText = text
-    }
-
-    /**
-     * Nullifies OCR text to remove it at the next onDraw() drawing.
-     */
-    fun removeResultText() {
-        resultText = null
-    }
 
     companion object {
         /** Flag to draw boxes representing the results from TessBaseAPI::GetRegions().  */
