@@ -191,7 +191,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
         with(CameraManager(application)) {
             cameraManager = this
-            viewfinder_view.setCameraManager(this)
+            viewfinder_view.cameraManager = this
         }
 
         // Set listener to change the size of the viewfinder rectangle.

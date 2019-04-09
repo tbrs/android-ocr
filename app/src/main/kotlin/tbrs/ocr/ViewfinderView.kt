@@ -40,7 +40,7 @@ import tbrs.ocr.camera.CameraManager
  */
 // This constructor is used when the class is built from an XML resource.
 class ViewfinderView(context: Context, attrs: AttributeSet) : View(context, attrs) {
-    private var cameraManager: CameraManager? = null
+    internal var cameraManager: CameraManager? = null
 
     /** Setting it to null removes text on next drawing pass. */
     var resultText: OcrResultText? = null
@@ -54,10 +54,6 @@ class ViewfinderView(context: Context, attrs: AttributeSet) : View(context, attr
     private val frameColor: Int = ResourcesCompat.getColor(resources, R.color.viewfinder_frame, null)
     @ColorInt
     private val cornerColor: Int = ResourcesCompat.getColor(resources, R.color.viewfinder_corners, null)
-
-    fun setCameraManager(manager: CameraManager) {
-        cameraManager = manager
-    }
 
     fun draw() = invalidate()
 
