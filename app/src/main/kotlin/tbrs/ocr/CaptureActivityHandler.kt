@@ -171,7 +171,6 @@ internal class CaptureActivityHandler(private val activity: CaptureActivity, pri
         if (state == State.SUCCESS) {
             state = State.PREVIEW
 
-            // Draw the viewfinder.
             activity.drawViewfinder()
         }
     }

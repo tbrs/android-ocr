@@ -59,6 +59,8 @@ class ViewfinderView(context: Context, attrs: AttributeSet) : View(context, attr
         cameraManager = manager
     }
 
+    fun draw() = invalidate()
+
     public override fun onDraw(canvas: Canvas) = with(cameraManager?.framingRect) {
         this ?: return
 
@@ -212,8 +214,6 @@ class ViewfinderView(context: Context, attrs: AttributeSet) : View(context, attr
         canvas.drawRect((transparentArea.right + 1).toFloat(), transparentArea.top.toFloat(), width.toFloat(), (transparentArea.bottom + 1).toFloat(), paint)
         canvas.drawRect(0f, (transparentArea.bottom + 1).toFloat(), width.toFloat(), height.toFloat(), paint)
     }
-
-    fun drawViewfinder() = invalidate()
 
     companion object {
         /** Flag to draw boxes representing the results from TessBaseAPI::GetRegions().  */
