@@ -191,7 +191,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
 
         with(CameraManager(application)) {
             cameraManager = this
-            viewfinder_view.setCameraManager(this)
+            viewfinder_view.cameraManager = this
         }
 
         // Set listener to change the size of the viewfinder rectangle.
@@ -836,7 +836,7 @@ class CaptureActivity : Activity(), SurfaceHolder.Callback, ShutterButton.OnShut
     }
 
     /** Request the viewfinder to be invalidated.  */
-    internal fun drawViewfinder() = viewfinder_view.drawViewfinder()
+    internal fun drawViewfinder() = viewfinder_view.draw()
 
     override fun onShutterButtonClick(b: ShutterButton) {
         if (isContinuousModeActive) {

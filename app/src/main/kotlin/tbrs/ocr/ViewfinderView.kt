@@ -28,6 +28,8 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.View
+import androidx.annotation.ColorInt
+import androidx.core.content.res.ResourcesCompat
 import tbrs.ocr.camera.CameraManager
 
 /**
@@ -37,217 +39,177 @@ import tbrs.ocr.camera.CameraManager
  * The code for this class was adapted from the ZXing project: http://code.google.com/p/zxing
  */
 // This constructor is used when the class is built from an XML resource.
-class ViewfinderView (context: Context, attrs: AttributeSet) : View(context, attrs) {
-    private var cameraManager: CameraManager? = null
-    private val paint: Paint
-    private val maskColor: Int
-    private val frameColor: Int
-    private val cornerColor: Int
+class ViewfinderView(context: Context, attrs: AttributeSet) : View(context, attrs) {
+    internal var cameraManager: CameraManager? = null
+
     /** Setting it to null removes text on next drawing pass. */
     var resultText: OcrResultText? = null
-    private var words: Array<String>? = null
-    private var regionBoundingBoxes: List<Rect>? = null
-    private var textlineBoundingBoxes: List<Rect>? = null
-    private var stripBoundingBoxes: List<Rect>? = null
-    private var wordBoundingBoxes: List<Rect>? = null
-    //  Rect bounds;
-    private var previewFrame: Rect? = null
-    private var rect: Rect? = null
 
-    init {
-        // Initialize these once for performance rather than calling them every time in onDraw().
-        paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        val resources = resources
-        maskColor = resources.getColor(R.color.viewfinder_mask)
-        frameColor = resources.getColor(R.color.viewfinder_frame)
-        cornerColor = resources.getColor(R.color.viewfinder_corners)
+    // Fields extracted to avoid allocations in onDraw().
+    private var bounds: Rect = Rect()
+    private val paint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    @ColorInt
+    private val maskColor: Int = ResourcesCompat.getColor(resources, R.color.viewfinder_mask, null)
+    @ColorInt
+    private val frameColor: Int = ResourcesCompat.getColor(resources, R.color.viewfinder_frame, null)
+    @ColorInt
+    private val cornerColor: Int = ResourcesCompat.getColor(resources, R.color.viewfinder_corners, null)
 
-        previewFrame = Rect()
-        rect = Rect()
-    }
+    fun draw() = invalidate()
 
-    fun setCameraManager(cameraManager: CameraManager) {
-        this.cameraManager = cameraManager
-    }
+    public override fun onDraw(canvas: Canvas) = with(cameraManager?.framingRect) {
+        this ?: return
 
-    public override fun onDraw(canvas: Canvas) {
-        val frame = cameraManager!!.framingRect ?: return
-        val width = canvas.width
-        val height = canvas.height
+        // Draw the exterior (i.e. outside the framing rect) darkened.
+        drawOverlay(canvas, this)
 
-        // Draw the exterior (i.e. outside the framing rect) darkened
-        paint.color = maskColor
-        canvas.drawRect(0f, 0f, width.toFloat(), frame.top.toFloat(), paint)
-        canvas.drawRect(0f, frame.top.toFloat(), frame.left.toFloat(), (frame.bottom + 1).toFloat(), paint)
-        canvas.drawRect((frame.right + 1).toFloat(), frame.top.toFloat(), width.toFloat(), (frame.bottom + 1).toFloat(), paint)
-        canvas.drawRect(0f, (frame.bottom + 1).toFloat(), width.toFloat(), height.toFloat(), paint)
+        // If we have an OCR result, display its information on the viewfinder.
+        drawOcrResult(canvas, this)
 
-        // If we have an OCR result, overlay its information on the viewfinder.
-        if (resultText != null) {
-            // Only draw text/bounding boxes on viewfinder if it hasn't been resized since the OCR was requested.
-            val bitmapSize = resultText!!.bitmapDimensions
-            previewFrame = cameraManager!!.getFramingRectInPreview()
-            if (bitmapSize.x == previewFrame!!.width() && bitmapSize.y == previewFrame!!.height()) {
-                val scaleX = frame.width() / previewFrame!!.width().toFloat()
-                val scaleY = frame.height() / previewFrame!!.height().toFloat()
-
-                if (DRAW_REGION_BOXES) {
-                    regionBoundingBoxes = resultText!!.regionBoundingBoxes
-                    for (i in regionBoundingBoxes!!.indices) {
-                        paint.alpha = 0xA0
-                        paint.color = Color.MAGENTA
-                        paint.style = Style.STROKE
-                        paint.strokeWidth = 1f
-                        rect = regionBoundingBoxes!![i]
-                        canvas.drawRect(frame.left + rect!!.left * scaleX,
-                                frame.top + rect!!.top * scaleY,
-                                frame.left + rect!!.right * scaleX,
-                                frame.top + rect!!.bottom * scaleY, paint)
-                    }
-                }
-
-                if (DRAW_TEXTLINE_BOXES) {
-                    // Draw each textline
-                    textlineBoundingBoxes = resultText!!.textlineBoundingBoxes
-                    paint.alpha = 0xA0
-                    paint.color = Color.RED
-                    paint.style = Style.STROKE
-                    paint.strokeWidth = 1f
-                    for (i in textlineBoundingBoxes!!.indices) {
-                        rect = textlineBoundingBoxes!![i]
-                        canvas.drawRect(frame.left + rect!!.left * scaleX,
-                                frame.top + rect!!.top * scaleY,
-                                frame.left + rect!!.right * scaleX,
-                                frame.top + rect!!.bottom * scaleY, paint)
-                    }
-                }
-
-                if (DRAW_STRIP_BOXES) {
-                    stripBoundingBoxes = resultText!!.stripBoundingBoxes
-                    paint.alpha = 0xFF
-                    paint.color = Color.YELLOW
-                    paint.style = Style.STROKE
-                    paint.strokeWidth = 1f
-                    for (i in stripBoundingBoxes!!.indices) {
-                        rect = stripBoundingBoxes!![i]
-                        canvas.drawRect(frame.left + rect!!.left * scaleX,
-                                frame.top + rect!!.top * scaleY,
-                                frame.left + rect!!.right * scaleX,
-                                frame.top + rect!!.bottom * scaleY, paint)
-                    }
-                }
-
-                // Split the text into words
-                if (DRAW_WORD_BOXES || DRAW_WORD_TEXT) wordBoundingBoxes = resultText!!.wordBoundingBoxes
-
-                if (DRAW_WORD_BOXES) {
-                    paint.alpha = 0xFF
-                    paint.color = -0xff3301
-                    paint.style = Style.STROKE
-                    paint.strokeWidth = 1f
-                    for (i in wordBoundingBoxes!!.indices) {
-                        // Draw a bounding box around the word
-                        rect = wordBoundingBoxes!![i]
-                        canvas.drawRect(
-                                frame.left + rect!!.left * scaleX,
-                                frame.top + rect!!.top * scaleY,
-                                frame.left + rect!!.right * scaleX,
-                                frame.top + rect!!.bottom * scaleY, paint)
-                    }
-                }
-
-                if (DRAW_WORD_TEXT) {
-                    words = resultText!!.text.replace("\n", " ").split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-                    val wordConfidences = resultText!!.wordConfidences
-                    for (i in wordBoundingBoxes!!.indices) {
-                        var isWordBlank = true
-                        try {
-                            if (words!![i] != "") {
-                                isWordBlank = false
-                            }
-                        } catch (e: ArrayIndexOutOfBoundsException) {
-                            e.printStackTrace()
-                        }
-
-                        // Only draw if word has characters
-                        if (!isWordBlank) {
-                            // Draw a white background around each word
-                            rect = wordBoundingBoxes!![i]
-                            paint.color = Color.WHITE
-                            paint.style = Style.FILL
-                            if (DRAW_TRANSPARENT_WORD_BACKGROUNDS) {
-                                // Higher confidence = more opaque, less transparent background
-                                paint.alpha = wordConfidences[i] * 255 / 100
-                            } else {
-                                paint.alpha = 255
-                            }
-                            canvas.drawRect(frame.left + rect!!.left * scaleX,
-                                    frame.top + rect!!.top * scaleY,
-                                    frame.left + rect!!.right * scaleX,
-                                    frame.top + rect!!.bottom * scaleY, paint)
-
-                            // Draw the word in black text
-                            paint.color = Color.BLACK
-                            paint.alpha = 0xFF
-                            paint.isAntiAlias = true
-                            paint.textAlign = Align.LEFT
-
-                            // Adjust text size to fill rect
-                            paint.textSize = 100f
-                            paint.textScaleX = 1.0f
-                            // ask the paint for the bounding rect if it were to draw this text
-                            val bounds = Rect()
-                            paint.getTextBounds(words!![i], 0, words!![i].length, bounds)
-                            // get the height that would have been produced
-                            val h = bounds.bottom - bounds.top
-                            // figure out what textSize setting would create that height of text
-                            val size = rect!!.height().toFloat() / h * 100f
-                            // and set it into the paint
-                            paint.textSize = size
-                            // Now set the scale.
-                            // do calculation with scale of 1.0 (no scale)
-                            paint.textScaleX = 1.0f
-                            // ask the paint for the bounding rect if it were to draw this text.
-                            paint.getTextBounds(words!![i], 0, words!![i].length, bounds)
-                            // determine the width
-                            val w = bounds.right - bounds.left
-                            // calculate the baseline to use so that the entire text is visible including the descenders
-                            val text_h = bounds.bottom - bounds.top
-                            val baseline = bounds.bottom + (rect!!.height() - text_h) / 2
-                            // determine how much to scale the width to fit the view
-                            val xscale = rect!!.width().toFloat() / w
-                            // set the scale for the text paint
-                            paint.textScaleX = xscale
-                            canvas.drawText(words!![i], frame.left + rect!!.left * scaleX, frame.top + rect!!.bottom * scaleY - baseline, paint)
-                        }
-
-                    }
-                }
-            }
-
-        }
-        // Draw a two pixel solid border inside the framing rect
+        // Draw a two pixel solid border inside the framing rect.
         paint.alpha = 0
         paint.style = Style.FILL
         paint.color = frameColor
-        canvas.drawRect(frame.left.toFloat(), frame.top.toFloat(), (frame.right + 1).toFloat(), (frame.top + 2).toFloat(), paint)
-        canvas.drawRect(frame.left.toFloat(), (frame.top + 2).toFloat(), (frame.left + 2).toFloat(), (frame.bottom - 1).toFloat(), paint)
-        canvas.drawRect((frame.right - 1).toFloat(), frame.top.toFloat(), (frame.right + 1).toFloat(), (frame.bottom - 1).toFloat(), paint)
-        canvas.drawRect(frame.left.toFloat(), (frame.bottom - 1).toFloat(), (frame.right + 1).toFloat(), (frame.bottom + 1).toFloat(), paint)
+        canvas.drawRect(left.toFloat(), top.toFloat(), (right + 1).toFloat(), (top + 2).toFloat(), paint)
+        canvas.drawRect(left.toFloat(), (top + 2).toFloat(), (left + 2).toFloat(), (bottom - 1).toFloat(), paint)
+        canvas.drawRect((right - 1).toFloat(), top.toFloat(), (right + 1).toFloat(), (bottom - 1).toFloat(), paint)
+        canvas.drawRect(left.toFloat(), (bottom - 1).toFloat(), (right + 1).toFloat(), (bottom + 1).toFloat(), paint)
 
-        // Draw the framing rect corner UI elements
+        // Draw the framing rect corner UI elements.
         paint.color = cornerColor
-        canvas.drawRect((frame.left - 15).toFloat(), (frame.top - 15).toFloat(), (frame.left + 15).toFloat(), frame.top.toFloat(), paint)
-        canvas.drawRect((frame.left - 15).toFloat(), frame.top.toFloat(), frame.left.toFloat(), (frame.top + 15).toFloat(), paint)
-        canvas.drawRect((frame.right - 15).toFloat(), (frame.top - 15).toFloat(), (frame.right + 15).toFloat(), frame.top.toFloat(), paint)
-        canvas.drawRect(frame.right.toFloat(), (frame.top - 15).toFloat(), (frame.right + 15).toFloat(), (frame.top + 15).toFloat(), paint)
-        canvas.drawRect((frame.left - 15).toFloat(), frame.bottom.toFloat(), (frame.left + 15).toFloat(), (frame.bottom + 15).toFloat(), paint)
-        canvas.drawRect((frame.left - 15).toFloat(), (frame.bottom - 15).toFloat(), frame.left.toFloat(), frame.bottom.toFloat(), paint)
-        canvas.drawRect((frame.right - 15).toFloat(), frame.bottom.toFloat(), (frame.right + 15).toFloat(), (frame.bottom + 15).toFloat(), paint)
-        canvas.drawRect(frame.right.toFloat(), (frame.bottom - 15).toFloat(), (frame.right + 15).toFloat(), (frame.bottom + 15).toFloat(), paint)
+        canvas.drawRect((left - 15).toFloat(), (top - 15).toFloat(), (left + 15).toFloat(), top.toFloat(), paint)
+        canvas.drawRect((left - 15).toFloat(), top.toFloat(), left.toFloat(), (top + 15).toFloat(), paint)
+        canvas.drawRect((right - 15).toFloat(), (top - 15).toFloat(), (right + 15).toFloat(), top.toFloat(), paint)
+        canvas.drawRect(right.toFloat(), (top - 15).toFloat(), (right + 15).toFloat(), (top + 15).toFloat(), paint)
+        canvas.drawRect((left - 15).toFloat(), bottom.toFloat(), (left + 15).toFloat(), (bottom + 15).toFloat(), paint)
+        canvas.drawRect((left - 15).toFloat(), (bottom - 15).toFloat(), left.toFloat(), bottom.toFloat(), paint)
+        canvas.drawRect((right - 15).toFloat(), bottom.toFloat(), (right + 15).toFloat(), (bottom + 15).toFloat(), paint)
+        canvas.drawRect(right.toFloat(), (bottom - 15).toFloat(), (right + 15).toFloat(), (bottom + 15).toFloat(), paint)
     }
 
-    fun drawViewfinder() = invalidate()
+    private fun drawOcrResult(canvas: Canvas, drawArea: Rect) = with(resultText) {
+        this ?: return
+
+        // Only draw text/bounding boxes on viewfinder if it hasn't been resized since the OCR was requested.
+        val previewFrame = cameraManager?.getFramingRectInPreview()
+        if (bitmapDimensions.x != previewFrame!!.width() || bitmapDimensions.y != previewFrame.height()) return@with
+
+        val scaleX = drawArea.width() / previewFrame.width().toFloat()
+        val scaleY = drawArea.height() / previewFrame.height().toFloat()
+
+        val drawBox: (box: Rect) -> Unit = { box ->
+            canvas.drawRect(drawArea.left + box.left * scaleX,
+                    drawArea.top + box.top * scaleY,
+                    drawArea.left + box.right * scaleX,
+                    drawArea.top + box.bottom * scaleY, paint)
+        }
+
+        if (DRAW_REGION_BOXES) {
+            paint.alpha = 0xA0
+            paint.color = Color.MAGENTA
+            paint.style = Style.STROKE
+            paint.strokeWidth = 1f
+
+            regionBoundingBoxes.forEach(drawBox)
+        }
+
+        if (DRAW_TEXTLINE_BOXES) {
+            paint.alpha = 0xA0
+            paint.color = Color.RED
+            paint.style = Style.STROKE
+            paint.strokeWidth = 1f
+
+            textlineBoundingBoxes.forEach(drawBox)
+        }
+
+        if (DRAW_STRIP_BOXES) {
+            paint.alpha = 0xFF
+            paint.color = Color.YELLOW
+            paint.style = Style.STROKE
+            paint.strokeWidth = 1f
+
+            stripBoundingBoxes.forEach(drawBox)
+        }
+
+        // Split the text into words.
+        val wordBoundingBoxes: List<Rect> = if (DRAW_WORD_BOXES || DRAW_WORD_TEXT) {
+            resultText!!.wordBoundingBoxes
+        } else {
+            emptyList()
+        }
+        if (DRAW_WORD_BOXES && !wordBoundingBoxes.isEmpty()) {
+            paint.alpha = 0xFF
+            paint.color = -0xff3301
+            paint.style = Style.STROKE
+            paint.strokeWidth = 1f
+
+            // Draw a bounding box around the word.
+            wordBoundingBoxes.forEach(drawBox)
+        }
+        if (DRAW_WORD_TEXT) {
+            val words = text.replace("\n", " ").split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+            wordBoundingBoxes.forEachIndexed { i, box ->
+                // Only draw if word has characters.
+                val word = words.getOrElse(i) { "" }
+                if (word.isBlank()) return@forEachIndexed
+
+                // Draw a white background around each word.
+                paint.color = Color.WHITE
+                paint.style = Style.FILL
+                if (DRAW_TRANSPARENT_WORD_BACKGROUNDS) {
+                    // Higher confidence = more opaque, less transparent background.
+                    paint.alpha = wordConfidences.getOrElse(i) { 0 } * 255 / 100
+                } else {
+                    paint.alpha = 255
+                }
+                drawBox(box)
+
+                // Draw the word in black text.
+                paint.color = Color.BLACK
+                paint.alpha = 0xFF
+                paint.isAntiAlias = true
+                paint.textAlign = Align.LEFT
+
+                // Adjust text size to fill rect.
+                paint.textSize = 100f
+                paint.textScaleX = 1.0f
+                // ask the paint for the bounding rect if it were to draw this text.
+                paint.getTextBounds(word, 0, word.length, bounds)
+                // get the height that would have been produced.
+                val h = bounds.bottom - bounds.top
+                // figure out what textSize setting would create that height of text
+                val size = box.height().toFloat() / h * 100f
+                // and set it into the paint.
+                paint.textSize = size
+                // Now set the scale.
+                // do calculation with scale of 1.0 (no scale).
+                paint.textScaleX = 1.0f
+                // ask the paint for the bounding rect if it were to draw this text.
+                paint.getTextBounds(word, 0, word.length, bounds)
+                // determine the width.
+                val w = bounds.right - bounds.left
+                // calculate the baseline to use so that the entire text is visible including the descenders.
+                val text_h = bounds.bottom - bounds.top
+                val baseline = bounds.bottom + (box.height() - text_h) / 2
+                // determine how much to scale the width to fit the view.
+                val xscale = box.width().toFloat() / w
+                // set the scale for the text paint.
+                paint.textScaleX = xscale
+                canvas.drawText(word, drawArea.left + box.left * scaleX, drawArea.top + box.bottom * scaleY - baseline, paint)
+            }
+        }
+    }
+
+    private fun drawOverlay(canvas: Canvas, transparentArea: Rect) {
+        val width = canvas.width
+        val height = canvas.height
+
+        paint.color = maskColor
+        canvas.drawRect(0f, 0f, width.toFloat(), transparentArea.top.toFloat(), paint)
+        canvas.drawRect(0f, transparentArea.top.toFloat(), transparentArea.left.toFloat(), (transparentArea.bottom + 1).toFloat(), paint)
+        canvas.drawRect((transparentArea.right + 1).toFloat(), transparentArea.top.toFloat(), width.toFloat(), (transparentArea.bottom + 1).toFloat(), paint)
+        canvas.drawRect(0f, (transparentArea.bottom + 1).toFloat(), width.toFloat(), height.toFloat(), paint)
+    }
 
     companion object {
         /** Flag to draw boxes representing the results from TessBaseAPI::GetRegions().  */
