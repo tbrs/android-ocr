@@ -29,6 +29,7 @@ import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.View
 import androidx.annotation.ColorInt
+import androidx.core.content.res.ResourcesCompat
 import tbrs.ocr.camera.CameraManager
 
 /**
@@ -48,11 +49,11 @@ class ViewfinderView(context: Context, attrs: AttributeSet) : View(context, attr
     private var bounds: Rect = Rect()
     private val paint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
     @ColorInt
-    private val maskColor: Int = resources.getColor(R.color.viewfinder_mask)
+    private val maskColor: Int = ResourcesCompat.getColor(resources, R.color.viewfinder_mask, null)
     @ColorInt
-    private val frameColor: Int = resources.getColor(R.color.viewfinder_frame)
+    private val frameColor: Int = ResourcesCompat.getColor(resources, R.color.viewfinder_frame, null)
     @ColorInt
-    private val cornerColor: Int = resources.getColor(R.color.viewfinder_corners)
+    private val cornerColor: Int = ResourcesCompat.getColor(resources, R.color.viewfinder_corners, null)
 
     fun setCameraManager(manager: CameraManager) {
         cameraManager = manager
